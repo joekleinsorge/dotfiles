@@ -32,7 +32,7 @@ alias gap="ga && gc 'ci: commit' && gp"
 alias gapf= "git commit --amend --no-edit && gp --force-with-lease"
 alias gcc='echo -e "\e[1;32mfix:\e[0m a commit that fixes a bug."; echo -e "\e[1;36mfeat:\e[0m a commit that adds new functionality."; echo -e "\e[1;33mdocs:\e[0m a commit that adds or improves documentation."; echo -e "\e[1;35mtest:\e[0m a commit that adds unit tests."; echo -e "\e[1;31mperf:\e[0m a commit that improves performance, without functional changes."; echo -e "\e[1;34mchore:\e[0m a catch-all type for any other commits."'
 alias gl="git log --graph --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)' --all"
-alias ls="exa --long --classify --icons --git --group-directories-first --color=always -a"
+alias ls="eza --long --classify --icons --git --group-directories-first --color=always -a"
 alias sl="ls"
 alias bat="bat --color=always"
 alias nivm="nvim"
@@ -46,7 +46,8 @@ alias notes="nvim ~/git/notes/vault"
 alias ...="cd ../.."
 alias dot="cd ~/git/dotfiles"
 alias skill="ps -ef | fzf | awk '{print $2}' | xargs kill -9"
-
+alias ytdlmp4="yt-dlp -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]' --merge-output-format mp4"
+alias ytdlmp3="yt-dlp -x --audio-format mp3 --audio-quality 0"
 # =======================================
 # fh - browse firefox history
 fh() {

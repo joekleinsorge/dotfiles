@@ -2,16 +2,23 @@ k9s:
   cluster: default
   skin: catppuccin-mocha-transparent
   namespace:
-    active: all
+    active: rook-ceph
     lockFavorites: false
     favorites:
+    - external-dns
     - all
+    - default
+    - rook-ceph
+    - ingress-nginx
+    - kube-system
     - argocd
     - plex
+    - kindle-weather
     - frigate
-    - default
+    - sealed-secrets
+    - metallb-system
   view:
-    active: pod
+    active: context
   featureGates:
     nodeShell: false
   portForwardAddress: localhost

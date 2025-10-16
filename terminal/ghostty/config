@@ -1,0 +1,6 @@
+font-size = 16
+background-opacity = 0.9
+background-blur = true
+macos-titlebar-style = transparent
+background-opacity-cells = true
+theme = Kanagawa Dragon
