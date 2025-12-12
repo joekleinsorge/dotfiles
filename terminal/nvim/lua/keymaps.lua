@@ -1,53 +1,86 @@
-local keymap = vim.keymap.set
-local opts = { noremap = true, silent = true }
+local function map(mode, lhs, rhs, desc, opts)
+  local options = { noremap = true, silent = true }
+  if desc then
+    options.desc = desc
+  end
+  if opts then
+    options = vim.tbl_extend("force", options, opts)
+  end
+  vim.keymap.set(mode, lhs, rhs, options)
+end
 
-keymap("n", "<Space>", "", opts)
+local function with_plugin(module, plugin, callback)
+  return function()
+    local ok, mod = pcall(require, module)
+    if not ok then
+      local lazy_ok, lazy = pcall(require, "lazy")
+      if lazy_ok then
+        lazy.load { plugins = { plugin } }
+        ok, mod = pcall(require, module)
+      end
+    end
+
+    if not ok then
+      vim.notify(("Module %s is not available"):format(module), vim.log.levels.WARN)
+      return
+    end
+
+    callback(mod)
+  end
+end
+
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
---cellular
-keymap("n", "<leader>mr", "<cmd>CellularAutomaton make_it_rain<CR>")
+map({ "n", "v" }, "<Space>", "<Nop>")
 
--- Notes plugin
-keymap("n", "<leader>nn", "<cmd>lua require 'notes'.new_note()<CR>")
-keymap("n", "<leader>nl","<cmd>lua require 'notes'.last_note()<cr>")
-keymap("n", "<leader>nf","<cmd>lua require 'notes'.find_note()<cr>")
-keymap("n", "<leader>ns","<cmd>lua require 'notes'.search_notes()<cr>")
+map("n", "<leader><space>", function()
+  local ok, wk = pcall(require, "which-key")
+  if ok then
+    wk.show("<leader>")
+    return
+  end
+  vim.cmd("WhichKey \\<space>")
+end, "which-key: show <leader>")
 
--- Map Ctrl+Space to open a popup menu with commands, e.g., WhichKey
-keymap("n", "<Space>", "<cmd>WhichKey \\<space><cr>", opts)
+map("n", "<leader>mr", "<cmd>CellularAutomaton make_it_rain<CR>", "Cellular automaton (rain)")
 
--- Better line navigation
-keymap({ 'n', 'v' }, "L", "$", opts)
-keymap({ 'n', 'v' }, "H", "^", opts)
+map("n", "<leader>nn", with_plugin("notes", "notes.nvim", function(notes)
+  notes.new_note()
+end), "Notes: new")
+map("n", "<leader>nl", with_plugin("notes", "notes.nvim", function(notes)
+  notes.last_note()
+end), "Notes: last")
+map("n", "<leader>nf", with_plugin("notes", "notes.nvim", function(notes)
+  notes.find_note()
+end), "Notes: find")
+map("n", "<leader>ns", with_plugin("notes", "notes.nvim", function(notes)
+  notes.search_notes()
+end), "Notes: search")
 
--- Better window navigation using Meta (often Alt or Esc) + directional keys
-keymap("n", "<m-h>", "<C-w>h", opts)  -- Move left
-keymap("n", "<m-j>", "<C-w>j", opts)  -- Move down
-keymap("n", "<m-k>", "<C-w>k", opts)  -- Move up
-keymap("n", "<m-l>", "<C-w>l", opts)  -- Move right
-keymap("n", "<m-tab>", "<c-6>", opts) -- Cycle through open windows
+map({ "n", "v" }, "L", "$", "Go line end")
+map({ "n", "v" }, "H", "^", "Go line start")
 
--- In visual mode, indent text, and re-select the visual area
-keymap("v", "<", "<gv", opts)              -- Indent selected text left
-keymap("v", ">", ">gv", opts)              -- Indent selected text right
-keymap("n", "n", "nzzzv", opts)            -- Move to next search result and center on screen
-keymap("n", "N", "Nzzzv", opts)            -- Move to previous search result and center on screen
-keymap("v", "J", ":m '>+1<CR>gv=gv")       -- Move selected lines down
-keymap("v", "K", ":m '<-2<CR>gv=gv", opts) -- Move selected lines up
+map("n", "<m-h>", "<C-w>h", "Window left")
+map("n", "<m-j>", "<C-w>j", "Window down")
+map("n", "<m-k>", "<C-w>k", "Window up")
+map("n", "<m-l>", "<C-w>l", "Window right")
+map("n", "<m-tab>", "<c-6>", "Alternate file")
 
--- When pasting in visual mode, cut the selected text before pasting
-keymap("x", "p", [["_dP]]) -- Cut the selected text and paste it
+map("v", "<", "<gv", "Indent left")
+map("v", ">", ">gv", "Indent right")
+map("n", "n", "nzzzv", "Next match centered")
+map("n", "N", "Nzzzv", "Prev match centered")
+map("v", "J", ":m '>+1<CR>gv=gv", "Move selection down")
+map("v", "K", ":m '<-2<CR>gv=gv", "Move selection up")
+
+map("x", "p", [["_dP]], "Paste replace without yank")
 
 vim.cmd([[:amenu 10.100 mousemenu.Goto\ Definition <cmd>lua vim.lsp.buf.definition()<CR>]])
 vim.cmd([[:amenu 10.110 mousemenu.References <cmd>lua vim.lsp.buf.references()<CR>]])
-keymap("n", "<RightMouse>", "<cmd>:popup mousemenu<CR>")
-keymap("n", "<Tab>", "<cmd>:popup mousemenu<CR>")
+map("n", "<RightMouse>", "<cmd>:popup mousemenu<CR>", "Mouse context menu")
+map("n", "<Tab>", "<cmd>:popup mousemenu<CR>", "Mouse context menu")
 
---undotree
-keymap("n", "<leader>u", vim.cmd.UndotreeToggle)
+map("n", "<leader>u", vim.cmd.UndotreeToggle, "Undo tree")
 
-
---No recording
-keymap("n", "Q", "<nop>")
-
+map("n", "Q", "<Nop>", "Disable macro recording")

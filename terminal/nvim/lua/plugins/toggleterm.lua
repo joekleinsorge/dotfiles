@@ -1,13 +1,14 @@
 local M = {
   "akinsho/toggleterm.nvim",
   event = "VeryLazy",
+  cmd = { "ToggleTerm", "ToggleTermToggleAll", "TermExec" },
 }
 
 function M.config()
   local execs = {
-    { nil, "<M-1>", "Horizontal Terminal", "horizontal", 0.3 },
-    { nil, "<M-2>", "Vertical Terminal", "vertical", 0.4 },
-    { nil, "<M-3>", "Float Terminal", "float", nil },
+    { nil, "<M-1>", "Horizontal Terminal", "horizontal", 0.3, "<leader>th" },
+    { nil, "<M-2>", "Vertical Terminal", "vertical", 0.4, "<leader>tv" },
+    { nil, "<M-3>", "Float Terminal", "float", nil, "<leader>tf" },
   }
 
   local function get_buf_size()
@@ -45,10 +46,14 @@ function M.config()
       vim.notify("Skipping configuring executable " .. binary .. ". Please make sure it is installed properly.")
       return
     end
-
-    vim.keymap.set({ "n", "t" }, opts.keymap, function()
+    local function mapper()
       exec_toggle { cmd = opts.cmd, count = opts.count, direction = opts.direction, size = opts.size() }
-    end, { desc = opts.label, noremap = true, silent = true })
+    end
+    local key_opts = { desc = opts.label, noremap = true, silent = true }
+    vim.keymap.set({ "n", "t" }, opts.keymap, mapper, key_opts)
+    if opts.leader_key then
+      vim.keymap.set({ "n", "t" }, opts.leader_key, mapper, key_opts)
+    end
   end
 
   for i, exec in pairs(execs) do
@@ -63,6 +68,7 @@ function M.config()
       size = function()
         return get_dynamic_terminal_size(direction, exec[5])
       end,
+      leader_key = exec[6],
     }
 
     add_exec(opts)
@@ -111,6 +117,7 @@ function M.config()
   })
 
   local opts = { noremap = true, silent = true }
+  vim.keymap.set({ "n", "t" }, "<leader>tt", "<cmd>ToggleTerm<cr>", vim.tbl_extend("force", opts, { desc = "Terminal Toggle" }))
   function _G.set_terminal_keymaps()
     vim.api.nvim_buf_set_keymap(0, "t", "<m-h>", [[<C-\><C-n><C-W>h]], opts)
     vim.api.nvim_buf_set_keymap(0, "t", "<m-j>", [[<C-\><C-n><C-W>j]], opts)
