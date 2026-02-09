@@ -1,9 +1,10 @@
 local M = {
- "zbirenbaum/copilot-cmp",
- setup = function()
-   require("copilot_cmp").setup({})
- end,
- requires = { "zbirenbaum/copilot.lua" },
+  "zbirenbaum/copilot-cmp",
+  dependencies = { "zbirenbaum/copilot.lua" },
+  event = "InsertEnter",
+  config = function()
+    require("copilot_cmp").setup {}
+  end,
 }
 
 return M

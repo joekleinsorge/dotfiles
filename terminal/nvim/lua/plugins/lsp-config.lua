@@ -13,7 +13,7 @@ return {
     "williamboman/mason-lspconfig.nvim",
     dependencies = { "williamboman/mason.nvim" },
     opts = {
-      ensure_installed = { "tsserver", "solargraph", "html", "lua_ls" },
+      ensure_installed = { "ts_ls", "solargraph", "html", "lua_ls" },
       automatic_installation = true,
     },
   },
@@ -27,10 +27,8 @@ return {
       end
 
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      local lspconfig = require("lspconfig")
-
       local servers = {
-        tsserver = {
+        ts_ls = {
           on_attach = function(client)
             client.server_capabilities.documentFormattingProvider = false
           end,
@@ -79,11 +77,11 @@ return {
       end
 
       for server, opts in pairs(servers) do
+        local server_specific_on_attach = opts.on_attach
         local server_opts = vim.tbl_deep_extend("force", {
           capabilities = capabilities,
         }, opts)
 
-        local server_specific_on_attach = server_opts.on_attach
         server_opts.on_attach = function(client, bufnr)
           if type(server_specific_on_attach) == "function" then
             server_specific_on_attach(client, bufnr)
@@ -91,7 +89,8 @@ return {
           on_attach(client, bufnr)
         end
 
-        lspconfig[server].setup(server_opts)
+        vim.lsp.config(server, server_opts)
+        vim.lsp.enable(server)
       end
 
       vim.keymap.set("n", "<leader>li", "<cmd>LspInfo<cr>", { desc = "LSP Info" })

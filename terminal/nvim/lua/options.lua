@@ -1,4 +1,12 @@
 vim.loader.enable()
+
+-- Map deprecated LSP helpers to the new API to silence upstream warnings
+vim.lsp.get_active_clients = function(filter)
+  return vim.lsp.get_clients(filter)
+end
+vim.lsp.buf_get_clients = function(bufnr)
+  return vim.lsp.get_clients { bufnr = bufnr }
+end
 vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
 vim.opt.undofile = true
 vim.opt.backup = false -- creates a backup file
@@ -19,7 +27,8 @@ vim.opt.splitbelow = true -- force all horizontal splits to go below current win
 vim.opt.splitright = true -- force all vertical splits to go to the right of current window
 vim.opt.swapfile = false -- creates a swapfile
 vim.opt.termguicolors = true -- set term gui colors (most terminals support this)
-vim.opt.timeoutlen = 1000 -- time to wait for a mapped sequence to complete (in milliseconds)
+vim.opt.timeout = true -- enable mapped sequence timeout for which-key
+vim.opt.timeoutlen = 300 -- time to wait for a mapped sequence to complete (in milliseconds)
 vim.opt.undofile = true -- enable persistent undo
 vim.opt.updatetime = 100 -- faster completion (4000ms default)
 vim.opt.writebackup = false -- if a file is being edited by another program (or was written to file while editing with another program), it is not allowed to be edited

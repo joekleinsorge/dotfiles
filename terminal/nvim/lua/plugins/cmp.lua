@@ -45,6 +45,10 @@ local M = {
       "hrsh7th/cmp-nvim-lua",
       commit = "f12408bdb54c39c23e67cab726264c10db33ada8",
     },
+    {
+      "zbirenbaum/copilot-cmp",
+      event = "InsertEnter",
+    },
   },
 }
 
@@ -127,10 +131,10 @@ function M.config()
           path = "",
           emoji = "",
         })[entry.source.name]
-        -- if entry.source.name == "copilot" then
-        --   vim_item.kind = icons.git.Octoface
-        --   vim_item.kind_hl_group = "CmpItemKindCopilot"
-        -- end
+        if entry.source.name == "copilot" then
+          vim_item.kind = icons.git.Octoface
+          vim_item.kind_hl_group = "CmpItemKindCopilot"
+        end
 
         if entry.source.name == "lab.quick_data" then
           vim_item.kind = icons.misc.CircuitBoard
@@ -146,7 +150,7 @@ function M.config()
       end,
     },
     sources = {
-      -- { name = "copilot" },
+      { name = "copilot" },
       {
         name = "nvim_lsp",
         entry_filter = function(entry, ctx)

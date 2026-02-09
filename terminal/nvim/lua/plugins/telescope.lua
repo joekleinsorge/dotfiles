@@ -1,6 +1,9 @@
 local M = {
   "nvim-telescope/telescope.nvim",
-  dependencies = { { "nvim-telescope/telescope-fzf-native.nvim", build = "make", lazy = true } },
+  dependencies = {
+    { "nvim-telescope/telescope-fzf-native.nvim", build = "make", lazy = true },
+    { "ahmedkhalf/project.nvim" },
+  },
   lazy = true,
   cmd = "Telescope",
 }
@@ -8,8 +11,9 @@ local M = {
 function M.config()
   local icons = require "icons"
   local actions = require "telescope.actions"
+  local telescope = require "telescope"
 
-  require("telescope").setup {
+  telescope.setup {
     defaults = {
       prompt_prefix = icons.ui.Telescope .. " ",
       selection_caret = icons.ui.Forward .. " ",
@@ -116,6 +120,9 @@ function M.config()
       },
     },
   }
+
+  pcall(telescope.load_extension, "fzf")
+  pcall(telescope.load_extension, "projects")
 end
 
 return M
