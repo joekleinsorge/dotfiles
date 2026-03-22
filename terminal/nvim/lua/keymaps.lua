@@ -29,6 +29,22 @@ local function with_plugin(module, plugin, callback)
   end
 end
 
+local function open_latest_note()
+  local notes_path = (os.getenv("HOME") or "") .. "/git/notes/vault"
+  local files = vim.fn.globpath(notes_path, "*.md", false, true)
+
+  if vim.tbl_isempty(files) then
+    vim.notify("No notes found", vim.log.levels.WARN)
+    return
+  end
+
+  table.sort(files, function(a, b)
+    return vim.fn.getftime(a) > vim.fn.getftime(b)
+  end)
+
+  vim.cmd.edit(vim.fn.fnameescape(files[1]))
+end
+
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
@@ -49,7 +65,12 @@ map("n", "<leader>nn", with_plugin("notes", "notes.nvim", function(notes)
   notes.new_note()
 end), "Notes: new")
 map("n", "<leader>nl", with_plugin("notes", "notes.nvim", function(notes)
-  notes.last_note()
+  if type(notes.last_note) == "function" then
+    notes.last_note()
+    return
+  end
+
+  open_latest_note()
 end), "Notes: last")
 map("n", "<leader>nf", with_plugin("notes", "notes.nvim", function(notes)
   notes.find_note()

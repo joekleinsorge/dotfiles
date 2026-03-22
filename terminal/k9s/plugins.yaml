@@ -33,3 +33,30 @@ plugins:
       - '{"metadata":{"finalizers":null}}'
       - --type
       - merge
+  argocd_apps:
+    confirm: false
+    description: ArgoCD app list for current cluster context
+    scopes:
+      - all
+    command: kubectl
+    background: false
+    args:
+      - --context
+      - $CONTEXT
+      - -n
+      - argocd
+      - get
+      - applications.argoproj.io
+      - -o
+      - wide
+  holmesgpt:
+    confirm: false
+    description: HolmesGPT investigate selected Kubernetes resource
+    scopes:
+      - all
+    command: holmes
+    background: false
+    args:
+      - ask
+      - --no-interactive
+      - Investigate Kubernetes resource $RESOURCE_NAME/$NAME in namespace $NAMESPACE on context $CONTEXT. Give likely root causes, checks to run, and remediation steps.

@@ -1,0 +1,20 @@
+k9s:
+  cluster: freshlab
+  namespace:
+    active: all
+    lockFavorites: false
+    favorites:
+      - authelia
+      - all
+      - argocd
+      - budget
+      - arc
+      - default
+      - flask
+      - dex
+      - holmesgpt
+  view:
+    active: v1/namespaces
+  featureGates:
+    nodeShell: false
+  proxy: null

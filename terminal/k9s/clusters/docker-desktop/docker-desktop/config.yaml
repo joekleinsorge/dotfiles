@@ -1,0 +1,12 @@
+k9s:
+  cluster: docker-desktop
+  namespace:
+    active: default
+    lockFavorites: false
+    favorites:
+      - default
+  view:
+    active: contexts
+  featureGates:
+    nodeShell: false
+  proxy: null

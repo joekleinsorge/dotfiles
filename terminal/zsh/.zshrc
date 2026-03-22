@@ -48,6 +48,9 @@ alias dot="cd ~/git/dotfiles"
 alias skill="ps -ef | fzf | awk '{print $2}' | xargs kill -9"
 alias ytdlmp4="yt-dlp -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]' --merge-output-format mp4"
 alias ytdlmp3="yt-dlp -x --audio-format mp3 --audio-quality 0"
+alias mentat="limactl start --mount-only .:w & lima"
+
+
 # =======================================
 # fh - browse firefox history
 fh() {
@@ -175,6 +178,18 @@ k_sh() {
     echo "No pod selected or no pods available."
   fi
 }
+
+teach-me() {
+  emulate -L zsh
+  set -u
+
+  TEACH_ME_CWD="$PWD" \
+  TEACH_ME_TTY="$(tty 2>/dev/null || true)" \
+  TEACH_ME_LAST_CMD="$(fc -ln -1 2>/dev/null | sed -e 's/^[[:space:]]*//' || true)" \
+  "$HOME/git/notes/teach-me" "$@"
+}
+alias tm='teach-me'
+
 
 
 pods(){
