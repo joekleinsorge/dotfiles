@@ -2,10 +2,12 @@
 
 set -euo pipefail
 
-repo_root="${1:-}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+default_repo_root="$(cd "$script_dir/.." && pwd)"
+repo_root="${1:-$default_repo_root}"
 
-if [ -z "$repo_root" ] || [ ! -d "$repo_root" ]; then
-    echo "Usage: bash wsl/setup.sh <repo_root_in_wsl>"
+if [ -z "$repo_root" ] || [ ! -d "$repo_root" ] || [ ! -d "$repo_root/terminal" ]; then
+    echo "Usage: bash wsl/setup.sh [repo_root_in_wsl]"
     exit 1
 fi
 

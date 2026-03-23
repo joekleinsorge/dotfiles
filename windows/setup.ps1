@@ -1,29 +1,72 @@
 $ErrorActionPreference = 'Stop'
 
+function Get-AvailableWslDistros {
+    $allDistros = & wsl.exe -l -q 2>$null
+
+    return @(
+        $allDistros |
+            Where-Object { $_ -and $_.Trim() -and $_ -notmatch '^docker-desktop' } |
+            ForEach-Object { $_.Trim() }
+    )
+}
+
 function Get-DefaultWslDistro {
+    $distros = Get-AvailableWslDistros
+
+    if (-not $distros) {
+        return $null
+    }
+
     $verboseList = & wsl.exe -l -v 2>$null
     $defaultLine = $verboseList | Where-Object { $_ -match '^\*' } | Select-Object -First 1
 
     if ($defaultLine) {
         $trimmed = ($defaultLine -replace '^\*\s*', '').Trim()
-        return ($trimmed -split '\s+')[0]
+
+        foreach ($distro in ($distros | Sort-Object Length -Descending)) {
+            if ($trimmed.StartsWith($distro)) {
+                return $distro
+            }
+        }
     }
 
-    $allDistros = & wsl.exe -l -q 2>$null
-    $normalDistros = $allDistros | Where-Object { $_ -and $_.Trim() -and $_ -notmatch '^docker-desktop' }
+    return $distros[0]
+}
 
-    if ($normalDistros) {
-        return $normalDistros[0].Trim()
+function Install-WezTermConfig {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRootWindows
+    )
+
+    $weztermSource = Join-Path $RepoRootWindows 'terminal\wezterm\.wezterm.lua'
+
+    if (-not (Test-Path $weztermSource)) {
+        return
     }
 
-    return $null
+    $weztermTarget = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.wezterm.lua'
+    $managedSource = $weztermSource -replace '\\', '/'
+    $wrapperContent = "return dofile([[${managedSource}]])`n"
+
+    if (Test-Path $weztermTarget) {
+        $existingContent = Get-Content -Path $weztermTarget -Raw
+
+        if ($existingContent -ne $wrapperContent -and $existingContent -notmatch 'terminal/wezterm/.wezterm.lua') {
+            Move-Item -Path $weztermTarget -Destination "${weztermTarget}.bak" -Force
+            Write-Host "Backed up existing WezTerm config to ${weztermTarget}.bak"
+        }
+    }
+
+    Set-Content -Path $weztermTarget -Value $wrapperContent -NoNewline
+    Write-Host "Configured WezTerm at $weztermTarget"
 }
 
 if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
     throw 'wsl.exe was not found. Please install WSL and rerun this script.'
 }
 
-$existingDistros = & wsl.exe -l -q 2>$null | Where-Object { $_ -and $_.Trim() }
+$existingDistros = Get-AvailableWslDistros
 if (-not $existingDistros) {
     Write-Host 'No WSL distro found. Installing Ubuntu...'
     & wsl.exe --install -d Ubuntu
@@ -43,8 +86,13 @@ if (-not $repoRootWsl) {
     throw 'Could not map the repo path into WSL.'
 }
 
-$bootstrapCmd = "bash '$repoRootWsl/wsl/setup.sh' '$repoRootWsl'"
 Write-Host "Running WSL bootstrap in distro '$distro'..."
-& wsl.exe -d $distro -- bash -lc $bootstrapCmd
+& wsl.exe -d $distro -- bash "$repoRootWsl/wsl/setup.sh" "$repoRootWsl"
+
+if ($LASTEXITCODE -ne 0) {
+    throw "WSL bootstrap failed with exit code $LASTEXITCODE."
+}
+
+Install-WezTermConfig -RepoRootWindows $repoRootWindows
 
 Write-Host 'Windows setup complete (WSL-first mode).'
