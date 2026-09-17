@@ -4,13 +4,13 @@ k9s:
     active: all
     lockFavorites: false
     favorites:
-      - authelia
       - all
-      - argocd
-      - budget
+      - authelia
+      - flask
       - arc
       - default
-      - flask
+      - budget
+      - argocd
       - dex
       - holmesgpt
   view:

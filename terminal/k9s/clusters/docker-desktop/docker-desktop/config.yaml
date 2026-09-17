@@ -1,9 +1,10 @@
 k9s:
   cluster: docker-desktop
   namespace:
-    active: default
+    active: all
     lockFavorites: false
     favorites:
+      - all
       - default
   view:
     active: contexts
