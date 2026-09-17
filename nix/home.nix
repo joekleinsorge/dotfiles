@@ -27,11 +27,9 @@ in {
   home.file = {
     ".zshrc".source = liveLink "terminal/zsh/.zshrc";
     ".tmux.conf".source = liveLink "terminal/tmux/.tmux.conf";
-    ".wezterm.lua".source = liveLink "terminal/wezterm/.wezterm.lua";
     ".config/nvim".source = liveLink "terminal/nvim";
     ".config/starship.toml".source = liveLink "terminal/starship/starship.toml";
     ".config/ghostty/config".source = liveLink "terminal/ghostty/config";
-    ".config/wezterm/themes".source = liveLink "terminal/wezterm/themes";
     ".config/aerospace/aerospace.toml".source = liveLink "mac/.aerospace.toml";
 
     # Keep the K9s destination writable for logs and other runtime state while

@@ -37,7 +37,11 @@ alias cp='cp -v -i'
 alias rm='rm -i'
 alias mv='mv -i'
 alias usage='du -hs ./* | sort -h'
-command -v wezterm >/dev/null 2>&1 && alias s='wezterm ssh'
+if $is_macos; then
+  alias s='ssh'
+elif command -v wezterm >/dev/null 2>&1; then
+  alias s='wezterm ssh'
+fi
 if $is_macos && [ "$(uname -m)" = "arm64" ]; then
   alias brew="arch -arm64 brew"
 fi

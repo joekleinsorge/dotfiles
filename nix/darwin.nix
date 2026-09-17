@@ -84,7 +84,7 @@
       "font-hack"
       "font-jetbrains-mono-nerd-font"
       "visual-studio-code"
-      "wezterm"
+      # Ghostty is installed through nix/home.nix (ghostty-bin).
     ];
     onActivation = {
       autoUpdate = false;

@@ -78,6 +78,13 @@ existing terminal configuration into your home directory. GUI applications are
 declarative, and Ghostty is installed from Nix with an app link exposed under
 `/Applications` for Finder and Launchpad.
 
+Ghostty is the macOS terminal; WezTerm configuration remains for Windows/WSL.
+Ghostty uses the Pnevma palette, bold 16-point JetBrains Mono Nerd Font,
+90% background opacity, zero padding, and a compact native tab titlebar.
+WezTerm's Lua focus-dependent color/opacity changes and tab-button controls
+do not map directly to Ghostty. Existing WezTerm installations are not
+automatically uninstalled because Homebrew cleanup is intentionally disabled.
+
 Machine-specific values live together in `dotfilesConfig` in `flake.nix`.
 Change the username, host label, architecture, and checkout path there before
 the first activation if this is not Joe's Apple Silicon Mac.
