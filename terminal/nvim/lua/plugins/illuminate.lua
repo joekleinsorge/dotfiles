@@ -1,35 +1,26 @@
 local M = {
-  "RRethy/vim-illuminate",
-  event = "VeryLazy",
+	"RRethy/vim-illuminate",
+	event = "VeryLazy",
 }
 
 function M.config()
-  require("illuminate").configure {
-    filetypes_denylist = {
-      "mason",
-      "harpoon",
-      "DressingInput",
-      "NeogitCommitMessage",
-      "qf",
-      "dirvish",
-      "minifiles",
-      "fugitive",
-      "alpha",
-      "NvimTree",
-      "lazy",
-      "NeogitStatus",
-      "Trouble",
-      "netrw",
-      "lir",
-      "DiffviewFiles",
-      "Outline",
-      "Jaq",
-      "spectre_panel",
-      "toggleterm",
-      "DressingSelect",
-      "TelescopePrompt",
-    },
-  }
+	require("illuminate").configure({
+		-- The Treesitter provider still uses nvim-treesitter's legacy locals
+		-- API, which is incompatible with Neovim 0.12. LSP remains the most
+		-- accurate provider and regex covers buffers without an LSP client.
+		providers = { "lsp", "regex" },
+		delay = 150,
+		filetypes_denylist = {
+			"alpha",
+			"diffbandit",
+			"lazy",
+			"mason",
+			"oil",
+			"qf",
+			"Trouble",
+			"TelescopePrompt",
+		},
+	})
 end
 
 return M

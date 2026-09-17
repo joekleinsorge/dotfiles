@@ -1,48 +1,12 @@
 local function map(mode, lhs, rhs, desc, opts)
-  local options = { noremap = true, silent = true }
-  if desc then
-    options.desc = desc
-  end
-  if opts then
-    options = vim.tbl_extend("force", options, opts)
-  end
-  vim.keymap.set(mode, lhs, rhs, options)
-end
-
-local function with_plugin(module, plugin, callback)
-  return function()
-    local ok, mod = pcall(require, module)
-    if not ok then
-      local lazy_ok, lazy = pcall(require, "lazy")
-      if lazy_ok then
-        lazy.load { plugins = { plugin } }
-        ok, mod = pcall(require, module)
-      end
-    end
-
-    if not ok then
-      vim.notify(("Module %s is not available"):format(module), vim.log.levels.WARN)
-      return
-    end
-
-    callback(mod)
-  end
-end
-
-local function open_latest_note()
-  local notes_path = (os.getenv("HOME") or "") .. "/git/notes/vault"
-  local files = vim.fn.globpath(notes_path, "*.md", false, true)
-
-  if vim.tbl_isempty(files) then
-    vim.notify("No notes found", vim.log.levels.WARN)
-    return
-  end
-
-  table.sort(files, function(a, b)
-    return vim.fn.getftime(a) > vim.fn.getftime(b)
-  end)
-
-  vim.cmd.edit(vim.fn.fnameescape(files[1]))
+	local options = { noremap = true, silent = true }
+	if desc then
+		options.desc = desc
+	end
+	if opts then
+		options = vim.tbl_extend("force", options, opts)
+	end
+	vim.keymap.set(mode, lhs, rhs, options)
 end
 
 vim.g.mapleader = " "
@@ -51,33 +15,29 @@ vim.g.maplocalleader = " "
 map({ "n", "v" }, "<Space>", "<Nop>")
 
 map("n", "<leader><space>", function()
-  local ok, wk = pcall(require, "which-key")
-  if ok then
-    wk.show("<leader>")
-    return
-  end
-  vim.cmd("WhichKey \\<space>")
-end, "which-key: show <leader>")
+	local ok, wk = pcall(require, "which-key")
+	if ok then
+		wk.show("<leader>")
+		return
+	end
+	vim.cmd("WhichKey \\<space>")
+end, "Show keymaps")
 
-map("n", "<leader>mr", "<cmd>CellularAutomaton make_it_rain<CR>", "Cellular automaton (rain)")
+map("n", "<leader>ff", "<cmd>Telescope find_files<CR>", "Find files")
+map("n", "<leader>fb", "<cmd>Telescope buffers<CR>", "Find buffers")
+map("n", "<leader>fr", "<cmd>Telescope oldfiles<CR>", "Recent files")
 
-map("n", "<leader>nn", with_plugin("notes", "notes.nvim", function(notes)
-  notes.new_note()
-end), "Notes: new")
-map("n", "<leader>nl", with_plugin("notes", "notes.nvim", function(notes)
-  if type(notes.last_note) == "function" then
-    notes.last_note()
-    return
-  end
+map("n", "<leader>ss", "<cmd>Telescope live_grep<CR>", "Search text")
+map("n", "<leader>sw", "<cmd>Telescope grep_string<CR>", "Search word")
+map("n", "<leader>sb", "<cmd>Telescope current_buffer_fuzzy_find<CR>", "Search buffer")
+map("n", "<leader>sr", "<cmd>Telescope resume<CR>", "Resume search")
+map("n", "<leader>sh", "<cmd>Telescope help_tags<CR>", "Search help")
+map("n", "<leader>sc", "<cmd>Telescope commands<CR>", "Search commands")
 
-  open_latest_note()
-end), "Notes: last")
-map("n", "<leader>nf", with_plugin("notes", "notes.nvim", function(notes)
-  notes.find_note()
-end), "Notes: find")
-map("n", "<leader>ns", with_plugin("notes", "notes.nvim", function(notes)
-  notes.search_notes()
-end), "Notes: search")
+map("n", "<leader>pl", "<cmd>Lazy<CR>", "Lazy")
+map("n", "<leader>pm", "<cmd>Mason<CR>", "Mason")
+
+map("n", "<leader>bb", "<C-^>", "Alternate buffer")
 
 map({ "n", "v" }, "L", "$", "Go line end")
 map({ "n", "v" }, "H", "^", "Go line start")
@@ -100,8 +60,5 @@ map("x", "p", [["_dP]], "Paste replace without yank")
 vim.cmd([[:amenu 10.100 mousemenu.Goto\ Definition <cmd>lua vim.lsp.buf.definition()<CR>]])
 vim.cmd([[:amenu 10.110 mousemenu.References <cmd>lua vim.lsp.buf.references()<CR>]])
 map("n", "<RightMouse>", "<cmd>:popup mousemenu<CR>", "Mouse context menu")
-map("n", "<Tab>", "<cmd>:popup mousemenu<CR>", "Mouse context menu")
-
-map("n", "<leader>u", vim.cmd.UndotreeToggle, "Undo tree")
 
 map("n", "Q", "<Nop>", "Disable macro recording")

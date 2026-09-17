@@ -1,6 +1,6 @@
 .POSIX:
 
-.PHONY: default mac terminal github windows wsl
+.PHONY: default bootstrap mac rebuild update preferences github check runtime-check nix-check shell-check nvim-check windows wsl vscode
 
 
 default:
@@ -9,18 +9,79 @@ default:
 	elif [ -n "$$WSL_DISTRO_NAME" ] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then \
 		$(MAKE) wsl; \
 	else \
-		$(MAKE) mac terminal github; \
+		$(MAKE) mac; \
 	fi
 
-mac: 
-	sh ./mac/install.sh
-	sh ./mac/set_defaults.sh
+bootstrap:
+	bash ./setup/mac.sh
 
-terminal:
-	sh ./terminal/link.sh
+mac: rebuild
+
+rebuild:
+	@if command -v darwin-rebuild >/dev/null 2>&1 || [ -x /run/current-system/sw/bin/darwin-rebuild ]; then \
+		bash ./rebuild.sh; \
+	elif command -v nix >/dev/null 2>&1 || [ -x /nix/var/nix/profiles/default/bin/nix ]; then \
+		bash ./setup/mac.sh; \
+	else \
+		echo "Nix is not installed. Install it from https://nixos.org/download/ and run 'make bootstrap'."; \
+		exit 1; \
+	fi
+
+update:
+	@nix_bin="$$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"; \
+		"$$nix_bin" --extra-experimental-features 'nix-command flakes' flake update
+	$(MAKE) check
+
+vscode:
+	bash ./setup/vscode.sh
+
+preferences:
+	sh ./mac/set_defaults.sh
 
 github:
 	sh ./github/download_repos.sh
+
+nvim-check:
+	@command -v stylua >/dev/null 2>&1 || { echo "stylua is required"; exit 1; }
+	stylua --check terminal/nvim
+	@for file in $$(rg --files terminal/nvim -g '*.lua'); do luac -p "$$file" || exit 1; done
+	@tmp="$$(mktemp -d "$${TMPDIR:-/tmp}/dotfiles-nvim-check.XXXXXX")"; \
+		trap 'rm -rf "$$tmp"' 0 1 2 3 15; \
+		real_data="$${XDG_DATA_HOME:-$$HOME/.local/share}/nvim"; \
+		mkdir -p "$$tmp/data/nvim/site"; \
+		XDG_DATA_HOME="$$tmp/data" XDG_STATE_HOME="$$tmp/state" XDG_CACHE_HOME="$$tmp/cache" \
+		NVIM_SMOKE_TEST=1 NVIM_SMOKE_DATA_DIR="$$real_data" \
+		nvim --headless -u "$(CURDIR)/terminal/nvim/init.lua" -i NONE \
+		"+lua dofile('$(CURDIR)/terminal/nvim/scripts/smoke.lua')"
+
+nix-check:
+	@nix_bin="$$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"; \
+		"$$nix_bin" --extra-experimental-features "nix-command flakes" flake check --no-build
+	@nix_bin="$$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"; \
+		host="$$($$nix_bin --extra-experimental-features 'nix-command flakes' eval --raw .#lib.dotfilesConfig.hostname)"; \
+		"$$nix_bin" --extra-experimental-features "nix-command flakes" \
+		build ".#darwinConfigurations.$$host.system" \
+		".#darwinConfigurations.$$host-bootstrap.system" --dry-run
+
+shell-check:
+	@command -v shellcheck >/dev/null 2>&1 || { echo "shellcheck is required"; exit 1; }
+	shellcheck -x $$(rg --files -g '*.sh')
+	zsh -n terminal/zsh/.zshrc
+runtime-check:
+	@if find . -path './.git' -prune -o -type f \
+		\( -name '*.log' -o -name '.nvimlog' -o -name '*.pre-nix' \) -print | grep -q .; then \
+		echo "Generated runtime or backup files are present in the repository."; \
+		find . -path './.git' -prune -o -type f \
+			\( -name '*.log' -o -name '.nvimlog' -o -name '*.pre-nix' \) -print; \
+		exit 1; \
+	fi
+	@if find terminal/k9s -type l -print | grep -q .; then \
+		echo "K9s source files must be regular files, not runtime symlinks."; \
+		find terminal/k9s -type l -print; \
+		exit 1; \
+	fi
+
+check: runtime-check nix-check shell-check nvim-check
 
 wsl:
 	bash ./wsl/setup.sh

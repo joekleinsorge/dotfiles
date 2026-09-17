@@ -1,12 +1,12 @@
 vim.loader.enable()
 
--- Map deprecated LSP helpers to the new API to silence upstream warnings
-vim.lsp.get_active_clients = function(filter)
-  return vim.lsp.get_clients(filter)
-end
-vim.lsp.buf_get_clients = function(bufnr)
-  return vim.lsp.get_clients { bufnr = bufnr }
-end
+vim.g.loaded_node_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
 vim.opt.undofile = true
 vim.opt.backup = false -- creates a backup file
@@ -20,16 +20,15 @@ vim.opt.mouse = "a" -- allow the mouse to be used in neovim
 vim.opt.pumheight = 10 -- pop up menu height
 vim.opt.pumblend = 10
 vim.opt.showmode = false -- we don't need to see things like -- INSERT -- anymore
-vim.opt.showtabline = 1 -- always show tabs
+vim.opt.showtabline = 1 -- show the tab line when multiple tabs exist
 vim.opt.smartcase = true -- smart case
 vim.opt.smartindent = true -- make indenting smarter again
 vim.opt.splitbelow = true -- force all horizontal splits to go below current window
 vim.opt.splitright = true -- force all vertical splits to go to the right of current window
-vim.opt.swapfile = false -- creates a swapfile
+vim.opt.swapfile = true -- recover unsaved edits after a crash
 vim.opt.termguicolors = true -- set term gui colors (most terminals support this)
 vim.opt.timeout = true -- enable mapped sequence timeout for which-key
 vim.opt.timeoutlen = 300 -- time to wait for a mapped sequence to complete (in milliseconds)
-vim.opt.undofile = true -- enable persistent undo
 vim.opt.updatetime = 100 -- faster completion (4000ms default)
 vim.opt.writebackup = false -- if a file is being edited by another program (or was written to file while editing with another program), it is not allowed to be edited
 vim.opt.expandtab = true -- convert tabs to spaces
@@ -48,22 +47,13 @@ vim.opt.scrolloff = 0
 vim.opt.sidescrolloff = 8
 vim.opt.guifont = "monospace:h17" -- the font used in graphical neovim applications
 vim.opt.title = false
-vim.opt.fillchars = vim.opt.fillchars + "eob: "
-vim.opt.fillchars:append {
-  stl = " ",
-}
-vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
--- vim.opt.foldlevel = 4
--- vim.opt.foldtext =
--- [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').'...'.trim(getline(v:foldend)) . ' (' . (v:foldend - v:foldstart + 1) . ' lines)']]
--- vim.opt.foldnestmax = 3
--- vim.opt.foldminlines = 1
+vim.opt.fillchars:append({
+	eob = " ",
+	stl = " ",
+})
+vim.opt.foldmethod = "manual"
 
-vim.opt.shortmess:append "c"
+vim.opt.shortmess:append("c")
 
-vim.cmd "set whichwrap+=<,>,[,],h,l"
-vim.cmd [[set iskeyword+=-]]
-
-vim.g.netrw_banner = 0
-vim.g.netrw_mouse = 2
+vim.opt.whichwrap:append("<,>,[,],h,l")
+vim.opt.iskeyword:append("-")

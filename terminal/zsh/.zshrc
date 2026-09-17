@@ -1,6 +1,24 @@
+case "$(uname -s)" in
+  Darwin) is_macos=true ;;
+  *) is_macos=false ;;
+esac
+
+if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [ -x "$HOME/.linuxbrew/bin/brew" ]; then
+  eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+elif [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
 export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH="/usr/local/opt/node@16/bin:$PATH"
-export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+[ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
+[ -d "$HOME/.local/share/nvim/mason/bin" ] && export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
+[ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/ruby/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
+[ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/lib/ruby/gems/4.0.0/bin" ] && export PATH="$HOMEBREW_PREFIX/lib/ruby/gems/4.0.0/bin:$PATH"
+[ -d /usr/local/opt/node@16/bin ] && export PATH="/usr/local/opt/node@16/bin:$PATH"
+[ -d /opt/homebrew/opt/openjdk/bin ] && export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+[ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/openjdk/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
 export PATH="$HOME/.emacs.d/bin:$PATH"
 export EDITOR="nvim"
 export KUBE_EDITOR="nvim"
@@ -8,20 +26,26 @@ export KUBE_EDITOR="nvim"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
-eval "$(starship init zsh)"
+command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
 
 autoload -U +X compinit && compinit
 [[ $commands[kubectl] ]] && source <(kubectl completion zsh)
 compdef kubecolor=kubectl
 command -v kubecolor >/dev/null 2>&1 && alias kubectl="kubecolor"
 
-alias brew='arch -arm64 brew install'
 alias cp='cp -v -i'
 alias rm='rm -i'
 alias mv='mv -i'
 alias usage='du -hs ./* | sort -h'
-alias s='wezterm ssh'
-alias brew="arch -arm64 brew"
+command -v wezterm >/dev/null 2>&1 && alias s='wezterm ssh'
+if $is_macos && [ "$(uname -m)" = "arm64" ]; then
+  alias brew="arch -arm64 brew"
+fi
+alias t='tmux'
+alias tl='tmux list-sessions'
+alias tr='tmux source-file ~/.tmux.conf \; display-message "tmux config reloaded"'
+alias tkill='tmux kill-session -t'
+alias tkillall='tmux kill-server'
 alias gs="git status"
 alias ga="git add ."
 alias gc="git commit -m"
@@ -29,17 +53,21 @@ alias gp="git push"
 alias gpl="git pull"
 alias gac="ga && gc"
 alias gap="ga && gc 'ci: commit' && gp"
-alias gapf= "git commit --amend --no-edit && gp --force-with-lease"
+alias gapf="git commit --amend --no-edit && gp --force-with-lease"
 alias gcc='echo -e "\e[1;32mfix:\e[0m a commit that fixes a bug."; echo -e "\e[1;36mfeat:\e[0m a commit that adds new functionality."; echo -e "\e[1;33mdocs:\e[0m a commit that adds or improves documentation."; echo -e "\e[1;35mtest:\e[0m a commit that adds unit tests."; echo -e "\e[1;31mperf:\e[0m a commit that improves performance, without functional changes."; echo -e "\e[1;34mchore:\e[0m a catch-all type for any other commits."'
 alias gl="git log --graph --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)' --all"
-alias ls="eza --long --classify --icons --git --group-directories-first --color=always -a"
+if command -v eza >/dev/null 2>&1; then
+  alias ls="eza --long --classify --icons --git --group-directories-first --color=always -a"
+elif command -v exa >/dev/null 2>&1; then
+  alias ls="exa --long --classify --icons --git --group-directories-first --color=always -a"
+fi
 alias sl="ls"
 alias bat="bat --color=always"
 alias nivm="nvim"
 alias n="nvim"
 alias py="python3"
 alias k="kubectl"
-alias pip="/usr/bin/pip3"
+alias pip="python3 -m pip"
 alias mkdir="mkdir -p"
 alias path='echo $PATH | tr -s ":" "\n"'
 alias notes="nvim ~/git/notes/vault"
@@ -48,52 +76,71 @@ alias dot="cd ~/git/dotfiles"
 alias skill="ps -ef | fzf | awk '{print $2}' | xargs kill -9"
 alias ytdlmp4="yt-dlp -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]' --merge-output-format mp4"
 alias ytdlmp3="yt-dlp -x --audio-format mp3 --audio-quality 0"
-alias mentat="limactl start --mount-only .:w & lima"
+if $is_macos; then
+  alias mentat="limactl start --mount-only .:w & lima"
+fi
+
+tx() {
+  tmux new-session -A -s "${1:-main}"
+}
+
+tp() {
+  local session="${1:-${PWD:t}}"
+  tmux new-session -A -s "$session"
+}
+
+tj() {
+  local session
+  session=$(tmux list-sessions -F '#S' 2>/dev/null | fzf --height 40% --reverse) || return
+  tmux attach -t "$session"
+}
 
 
 # =======================================
-# fh - browse firefox history
-fh() {
-  local cols sep profile_dir
-  cols=$(( COLUMNS / 3 ))
-  sep='{::}'
-  
-  # Search for places.sqlite and extract the directory path
-  profile_dir=$(find /Users/$(whoami)/Library/Application\ Support/Firefox/Profiles -type f -name "places.sqlite" -exec dirname {} \; | head -n 1)
+if $is_macos; then
+  # fh - browse firefox history
+  fh() {
+    local cols sep profile_dir
+    cols=$(( COLUMNS / 3 ))
+    sep='{::}'
 
-  # Update the path to the Firefox history file
-  cp -f "$profile_dir/places.sqlite" /tmp/h
+    # Search for places.sqlite and extract the directory path
+    profile_dir=$(find /Users/$(whoami)/Library/Application\ Support/Firefox/Profiles -type f -name "places.sqlite" -exec dirname {} \; | head -n 1)
 
-  sqlite3 -separator $sep /tmp/h \
-    "SELECT substr(moz_places.title, 1, $cols), moz_places.url
-     FROM moz_places
-     JOIN moz_historyvisits ON moz_places.id = moz_historyvisits.place_id
-     ORDER BY moz_historyvisits.visit_date DESC" |
-  awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
-  fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
-}
+    # Update the path to the Firefox history file
+    cp -f "$profile_dir/places.sqlite" /tmp/h
 
-# fb - browse firefox bookmarks
-fb() {
-  local cols sep profile_dir
-  cols=$(( COLUMNS / 3 ))
-  sep='{::}'
+    sqlite3 -separator $sep /tmp/h \
+      "SELECT substr(moz_places.title, 1, $cols), moz_places.url
+       FROM moz_places
+       JOIN moz_historyvisits ON moz_places.id = moz_historyvisits.place_id
+       ORDER BY moz_historyvisits.visit_date DESC" |
+    awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
+    fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
+  }
 
-  # Search for places.sqlite and extract the directory path
-  profile_dir=$(find /Users/$(whoami)/Library/Application\ Support/Firefox/Profiles -type f -name "places.sqlite" -exec dirname {} \; | head -n 1)
+  # fb - browse firefox bookmarks
+  fb() {
+    local cols sep profile_dir
+    cols=$(( COLUMNS / 3 ))
+    sep='{::}'
 
-  # Update the path to the Firefox database file
-  cp -f "$profile_dir/places.sqlite" /tmp/b
+    # Search for places.sqlite and extract the directory path
+    profile_dir=$(find /Users/$(whoami)/Library/Application\ Support/Firefox/Profiles -type f -name "places.sqlite" -exec dirname {} \; | head -n 1)
 
-  sqlite3 -separator $sep /tmp/b \
-    "SELECT substr(moz_bookmarks.title, 1, $cols), moz_places.url
-     FROM moz_bookmarks
-     LEFT JOIN moz_places ON moz_bookmarks.fk = moz_places.id
-     WHERE moz_bookmarks.type = 1
-     ORDER BY moz_bookmarks.dateAdded DESC" |
-  awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
-  fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
-}
+    # Update the path to the Firefox database file
+    cp -f "$profile_dir/places.sqlite" /tmp/b
+
+    sqlite3 -separator $sep /tmp/b \
+      "SELECT substr(moz_bookmarks.title, 1, $cols), moz_places.url
+       FROM moz_bookmarks
+       LEFT JOIN moz_places ON moz_bookmarks.fk = moz_places.id
+       WHERE moz_bookmarks.type = 1
+       ORDER BY moz_bookmarks.dateAdded DESC" |
+    awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
+    fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
+  }
+fi
 
 
 # Function to extract common archive formats

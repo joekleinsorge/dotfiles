@@ -1,3 +1,9 @@
 .DS_Store
-k9s.log
-lazy-lock.json
+*.log
+.nvimlog
+*.pre-nix
+result
+result-*
+.env
+.env.*
+!.env.example
