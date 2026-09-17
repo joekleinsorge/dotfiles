@@ -4,27 +4,9 @@ set -euo pipefail
 
 dotfiles_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
-if ! command -v nix >/dev/null 2>&1 && [ ! -x /nix/var/nix/profiles/default/bin/nix ]; then
-  echo "Nix is not installed. Install it from https://nixos.org/download/ and rerun this script."
-  exit 1
-fi
-
-nix_bin="$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"
-
-if [ ! -f "$dotfiles_dir/flake.lock" ]; then
-  echo "flake.lock is missing. Restore it before bootstrapping."
-  exit 1
-fi
-
 # shellcheck source=setup/preflight-mac.sh
 source "$dotfiles_dir/setup/preflight-mac.sh"
 darwin_rev="$(/usr/bin/plutil -extract nodes.darwin.locked.rev raw "$dotfiles_dir/flake.lock")"
-
-if [ "$(whoami)" != "$configured_user" ]; then
-  echo "This flake is configured for macOS user '$configured_user', but the current user is '$(whoami)'."
-  echo "Update dotfilesConfig in flake.nix before bootstrapping."
-  exit 1
-fi
 
 # Build successfully before moving any existing configuration files.
 "$nix_bin" --extra-experimental-features 'nix-command flakes' build \

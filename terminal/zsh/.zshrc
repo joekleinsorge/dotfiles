@@ -15,9 +15,6 @@ export PATH=$HOME/bin:/usr/local/bin:$PATH
 [ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
 [ -d "$HOME/.local/share/nvim/mason/bin" ] && export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
 [ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/ruby/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
-[ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/lib/ruby/gems/4.0.0/bin" ] && export PATH="$HOMEBREW_PREFIX/lib/ruby/gems/4.0.0/bin:$PATH"
-[ -d /usr/local/opt/node@16/bin ] && export PATH="/usr/local/opt/node@16/bin:$PATH"
-[ -d /opt/homebrew/opt/openjdk/bin ] && export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 [ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/openjdk/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
 export PATH="$HOME/.emacs.d/bin:$PATH"
 export EDITOR="nvim"
@@ -102,48 +99,37 @@ tj() {
 
 # =======================================
 if $is_macos; then
-  # fh - browse firefox history
-  fh() {
-    local cols sep profile_dir
-    cols=$(( COLUMNS / 3 ))
-    sep='{::}'
-
-    # Search for places.sqlite and extract the directory path
-    profile_dir=$(find /Users/$(whoami)/Library/Application\ Support/Firefox/Profiles -type f -name "places.sqlite" -exec dirname {} \; | head -n 1)
-
-    # Update the path to the Firefox history file
-    cp -f "$profile_dir/places.sqlite" /tmp/h
-
-    sqlite3 -separator $sep /tmp/h \
-      "SELECT substr(moz_places.title, 1, $cols), moz_places.url
-       FROM moz_places
-       JOIN moz_historyvisits ON moz_places.id = moz_historyvisits.place_id
-       ORDER BY moz_historyvisits.visit_date DESC" |
-    awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
-    fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
-  }
-
-  # fb - browse firefox bookmarks
-  fb() {
-    local cols sep profile_dir
-    cols=$(( COLUMNS / 3 ))
-    sep='{::}'
-
-    # Search for places.sqlite and extract the directory path
-    profile_dir=$(find /Users/$(whoami)/Library/Application\ Support/Firefox/Profiles -type f -name "places.sqlite" -exec dirname {} \; | head -n 1)
-
-    # Update the path to the Firefox database file
-    cp -f "$profile_dir/places.sqlite" /tmp/b
-
-    sqlite3 -separator $sep /tmp/b \
-      "SELECT substr(moz_bookmarks.title, 1, $cols), moz_places.url
-       FROM moz_bookmarks
-       LEFT JOIN moz_places ON moz_bookmarks.fk = moz_places.id
-       WHERE moz_bookmarks.type = 1
-       ORDER BY moz_bookmarks.dateAdded DESC" |
-    awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
-    fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
-  }
+  # SQLite's backup API includes committed WAL data without leaving browser
+  # databases behind. A subshell limits the cleanup trap to this invocation.
+  _firefox_pick() (
+    emulate -L zsh
+    setopt pipefail
+    local mode="$1" database selected url tmp query
+    local -a databases
+    databases=("$HOME"/Library/Application\ Support/Firefox/Profiles/*/places.sqlite(N))
+    (( ${#databases} )) || { print -u2 'No Firefox profile found.'; return 1; }
+    database="${databases[1]}"
+    if (( ${#databases} > 1 )); then
+      database=$(printf '%s\n' "${databases[@]}" | fzf --header='Select Firefox profile') || return
+    fi
+    tmp=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-firefox.XXXXXX") || return
+    trap 'command rm -rf -- "$tmp"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM HUP
+    # A fixed relative filename avoids quoting arbitrary paths in SQLite commands.
+    (cd "$tmp" && sqlite3 -readonly "$database" '.timeout 3000' '.backup places.sqlite') || return
+    if [[ "$mode" = history ]]; then
+      query='SELECT DISTINCT url FROM moz_places WHERE last_visit_date IS NOT NULL ORDER BY last_visit_date DESC;'
+    else
+      query='SELECT DISTINCT p.url FROM moz_bookmarks b JOIN moz_places p ON p.id=b.fk WHERE b.type=1 ORDER BY b.dateAdded DESC;'
+    fi
+    selected=$(sqlite3 "$tmp/places.sqlite" "$query" | fzf --multi --header="Firefox $mode") || return
+    while IFS= read -r url; do
+      case "$url" in http://*|https://*) open "$url" ;; esac
+    done <<< "$selected"
+  )
+  fh() { _firefox_pick history; }
+  fb() { _firefox_pick bookmarks; }
 fi
 
 
@@ -165,12 +151,15 @@ extract() {
 }
 
 squash() {
-  commit=$(git log --oneline | fzf | awk '{print $1}')
-  if [ -n "$commit" ]; then
-    git reset --soft $commit && git add -A && git commit
-  else
-    echo "Squash cancelled because no commit was selected."
-  fi
+  emulate -L zsh
+  local selection commit
+  [[ -z "$(git status --porcelain)" ]] || { print -u2 'Commit or stash changes before squashing.'; return 1; }
+  selection=$(git log --format='%h %s' | fzf --header='Select the base commit to keep; squash commits AFTER it') || return
+  commit=${selection%% *}
+  [[ -n "$commit" ]] || return 1
+  git merge-base --is-ancestor "$commit" HEAD || return
+  [[ "$(git rev-parse "$commit")" != "$(git rev-parse HEAD)" ]] || { print -u2 'No commits after that base.'; return 1; }
+  git reset --soft "$commit" && git commit
 }
 
 glt() {
@@ -187,36 +176,49 @@ cherry() {
 }
 
 gco() {
-    branch=$(git branch --all \
-      | fzf --height "90%" --header "PLEASE CHOOSE A BRANCH TO CHECKOUT" \
-      | sed "s/remotes\/origin\///" | xargs)
-    if [ -n "$branch" ]; then
-      git checkout $branch
-    fi
+    emulate -L zsh
+    local branch name
+    branch=$(git for-each-ref --format='%(refname)' refs/heads refs/remotes \
+      | grep -v '/HEAD$' | fzf --header='Select a branch') || return
+    case "$branch" in
+      refs/heads/*) git switch -- "${branch#refs/heads/}" ;;
+      refs/remotes/*)
+        name=${branch#refs/remotes/}
+        name=${name#*/}
+        if git show-ref --verify --quiet "refs/heads/$name"; then
+          git switch -- "$name"
+        else
+          git switch --track -- "${branch#refs/remotes/}"
+        fi ;;
+    esac
 }
 
 gwi() {
-    issue=$(gh issue list | fzf --header "PLEASE SELECT AN ISSUE TO WORK ON" | awk -F '\t' '{ print $1 }')
-    sanitized=$(gh issue view $issue --json "title" | jq -r ".title" | tr '[:upper:]' '[:lower:]' | tr -s -c "a-z0-9\n" "-" | head -c 60)
-    branchname=$issue-$sanitized
-    shortname=$(echo $branchname | head -c 30)
-    if [[ ! -z "$shortname" ]]; then
-        git fetch
-        existing=$(git branch -a | grep -v remotes | grep $shortname | head -n 1)
-        if [[ ! -z "$existing" ]]; then
-            sh -c "git switch $existing"
-        else
-            bold=$(tput bold)
-            normal=$(tput sgr0)
-            echo "${bold}Please confirm new branch name:${normal}"
-            vared branchname
-            base=$(git branch --show-current)
-            echo "${bold}Please confirm the base branch:${normal}"
-            vared base
-            git checkout -b $branchname origin/$base
-            git push --set-upstream origin $branchname
-        fi
+    emulate -L zsh
+    setopt pipefail
+    local selection issue title sanitized branchname base
+    selection=$(gh issue list | fzf --header='Select an issue') || return
+    issue=${selection%%$'\t'*}
+    [[ "$issue" = <-> ]] || return 1
+    title=$(gh issue view "$issue" --json title --jq .title) || return
+    sanitized=$(printf '%s' "$title" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr -cs 'a-z0-9' '-')
+    branchname="$issue-${sanitized[1,60]}"
+    vared -p 'Branch name: ' branchname || return
+    git check-ref-format --branch "$branchname" >/dev/null || return
+    if git show-ref --verify --quiet "refs/heads/$branchname"; then
+      git switch -- "$branchname"
+      return
     fi
+    git fetch origin || return
+    if git show-ref --verify --quiet "refs/remotes/origin/$branchname"; then
+      git switch --track -- "origin/$branchname"
+      return
+    fi
+    base=$(git branch --show-current) || return
+    vared -p 'Base branch on origin: ' base || return
+    git check-ref-format --branch "$base" >/dev/null || return
+    git switch -c "$branchname" "refs/remotes/origin/$base" || return
+    git push --set-upstream origin "$branchname"
 }
 
 k_sh() {

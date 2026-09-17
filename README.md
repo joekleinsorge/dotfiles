@@ -35,6 +35,11 @@ extensions. Marketplace downloads are separate so a retired extension or network
 failure cannot prevent the system setup from completing. Sign in to services
 such as GitHub separately and grant macOS Accessibility permission to AeroSpace.
 
+macOS uses Nix Python; project-specific Python versions belong in project
+environments. Homebrew installs libraries such as OpenSSL and libssh2 when
+needed as dependencies. Removing explicit entries does not uninstall existing
+packages while cleanup is disabled.
+
 After the first activation, use `make` or `./rebuild.sh` to apply changes.
 Repository downloads and macOS preference changes are intentionally separate:
 
@@ -70,6 +75,10 @@ What it does:
 - Runs the Linux setup inside your WSL distro.
 - Installs WSL packages and links terminal configs in WSL home.
 - Writes `%USERPROFILE%\\.wezterm.lua` so WezTerm can load the repo config from any checkout path.
+
+WSL preserves existing files and directories in unique sibling
+`.before-dotfiles.*` directories before linking. Repeating setup leaves correct
+links alone; restore an old file from the backup directory's `original` entry.
 
 ## Nix on macOS
 
@@ -125,6 +134,9 @@ Run this after bootstrap, when its validation tools are installed. It checks
 the flake, performs a dry-run build, validates shell scripts, and
 runs the Neovim formatting, syntax, and isolated headless smoke checks. It also
 rejects generated logs and Home Manager backup files in the repository.
+On macOS it also validates Ghostty's configuration with the installed Ghostty.
+K9s cluster sessions are ignored by Git and kept local; shared settings and
+themes remain tracked.
 
 The macOS preference script is installed below `/etc` in a directory derived
 from the configured username and is only run through `make preferences`; a

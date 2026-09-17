@@ -69,12 +69,8 @@
       "kubefirst/tools"
     ];
     brews = [
-      "libssh2"
       "kubefirst"
       "neofetch"
-      "openssl@3"
-      "python@3.10"
-      "python@3.11"
     ];
     casks = [
       "aerospace"

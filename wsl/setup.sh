@@ -16,8 +16,20 @@ link_path() {
     local source_path="$1"
     local destination_path="$2"
 
+    if [ ! -e "$source_path" ]; then
+        echo "Missing source: $source_path"
+        return 1
+    fi
+    if [ -L "$destination_path" ] && [ "$(readlink "$destination_path")" = "$source_path" ]; then
+        return 0
+    fi
     mkdir -p "$(dirname "$destination_path")"
-    rm -rf "$destination_path"
+    if [ -e "$destination_path" ] || [ -L "$destination_path" ]; then
+        local backup_dir
+        backup_dir="$(mktemp -d "${destination_path}.before-dotfiles.XXXXXX")"
+        mv "$destination_path" "$backup_dir/original"
+        echo "Preserved $destination_path in $backup_dir/original"
+    fi
     ln -s "$source_path" "$destination_path"
     echo "Linked $destination_path"
 }

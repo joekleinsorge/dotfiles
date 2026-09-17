@@ -20,9 +20,10 @@ if [ ! -f "$dotfiles_dir/flake.lock" ]; then
   echo "Restore the committed flake.lock before continuing."
   exit 1
 fi
+machine_config="$("$nix_bin" --extra-experimental-features 'nix-command flakes' \
+  eval --no-update-lock-file --json "$dotfiles_dir#lib.dotfilesConfig")"
 flake_value() {
-  "$nix_bin" --extra-experimental-features 'nix-command flakes' \
-    eval --no-update-lock-file --raw "$dotfiles_dir#lib.dotfilesConfig.$1"
+  printf '%s' "$machine_config" | /usr/bin/plutil -extract "$1" raw -o - -
 }
 configured_user="$(flake_value username)"
 configured_host="$(flake_value hostname)"

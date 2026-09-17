@@ -7,3 +7,4 @@ result-*
 .env
 .env.*
 !.env.example
+/terminal/k9s/clusters/
