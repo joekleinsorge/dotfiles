@@ -39,9 +39,6 @@ if $is_macos; then
 elif command -v wezterm >/dev/null 2>&1; then
   alias s='wezterm ssh'
 fi
-if $is_macos && [ "$(uname -m)" = "arm64" ]; then
-  alias brew="arch -arm64 brew"
-fi
 alias t='tmux'
 alias tl='tmux list-sessions'
 alias tr='tmux source-file ~/.tmux.conf \; display-message "tmux config reloaded"'
@@ -253,3 +250,7 @@ pods(){
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/joe/.local/bin:$PATH"
