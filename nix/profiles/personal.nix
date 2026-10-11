@@ -19,7 +19,9 @@
     ];
     brews = [
       "cask"
-      "railwaycat/emacsmacport/emacs-mac@29"
+      # Installed beside the `emacs` formula that `cask` depends on, which owns
+      # the emacs binaries. Linking it would collide, so it stays unlinked.
+      { name = "railwaycat/emacsmacport/emacs-mac@29"; link = false; }
       "handbrake"
       "konstructio/taps/kubefirst"
       "neofetch"
