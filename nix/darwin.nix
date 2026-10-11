@@ -45,13 +45,26 @@
     tmux
     tree
     wget
-    yt-dlp
     zsh
     zsh-autosuggestions
     zsh-syntax-highlighting
   ];
 
   programs.zsh.enable = true;
+
+  # Touch ID for sudo, including inside tmux sessions.
+  security.pam.services.sudo_local = {
+    touchIdAuth = true;
+    reattach = true;
+  };
+
+  # Keep the store from growing without bound across rebuilds.
+  nix.gc = {
+    automatic = true;
+    interval = { Weekday = 0; Hour = 12; Minute = 0; };
+    options = "--delete-older-than 30d";
+  };
+  nix.optimise.automatic = true;
 
   # nix-homebrew owns the Homebrew installation. The separate bootstrap
   # configuration enables autoMigrate for its one-time adoption only.
@@ -62,19 +75,14 @@
 
   # GUI applications and formulas without a stable nixpkgs equivalent remain
   # declarative here. `darwin-rebuild switch` is the only command needed to
-  # reconcile them.
+  # reconcile them. Profile-specific entries live in nix/profiles.
   homebrew = {
     enable = true;
-    taps = [
-      "kubefirst/tools"
-    ];
-    brews = [
-      "kubefirst"
-      "neofetch"
-    ];
     casks = [
       "aerospace"
-      "firefox"
+      # Agent CLIs ship faster than nixpkgs; Homebrew casks track releases.
+      "claude-code"
+      "codex"
       "font-fira-code"
       "font-fira-code-nerd-font"
       "font-hack"

@@ -1,0 +1,5 @@
+# pi packages restored by `make agents`. One `pi install` source per line.
+npm:pi-web-search
+npm:@ff-labs/pi-fff
+npm:pi-blackhole
+npm:@juicesharp/rpiv-todo

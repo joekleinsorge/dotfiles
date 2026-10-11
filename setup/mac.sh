@@ -9,29 +9,21 @@ source "$dotfiles_dir/setup/preflight-mac.sh"
 darwin_rev="$(/usr/bin/plutil -extract nodes.darwin.locked.rev raw "$dotfiles_dir/flake.lock")"
 
 # Build successfully before moving any existing configuration files.
-"$nix_bin" --extra-experimental-features 'nix-command flakes' build \
-  --no-update-lock-file --no-link "$dotfiles_dir#darwinConfigurations.$configured_host-bootstrap.system"
+env "${dotfiles_env[@]}" "$nix_bin" --extra-experimental-features 'nix-command flakes' build \
+  --impure --no-update-lock-file --no-link \
+  "$dotfiles_dir#darwinConfigurations.$flake_profile-bootstrap.system"
 
-# The Nix installer prepends its daemon initialization to Apple's stock shell
-# files. nix-darwin needs to own these paths, so preserve the originals before
-# the first activation. Never overwrite an existing backup.
-for shell_file in /etc/bashrc /etc/zshrc; do
-  backup_file="${shell_file}.before-nix-darwin"
-  if [ -e "$shell_file" ] && [ ! -L "$shell_file" ]; then
-    if [ -e "$backup_file" ]; then
-      echo "Cannot back up $shell_file because $backup_file already exists."
-      echo "Review those files and resolve the conflict before continuing."
-      exit 1
-    fi
-    echo "Preserving $shell_file as $backup_file"
-    sudo mv "$shell_file" "$backup_file"
-  fi
-done
-
+bash "$dotfiles_dir/setup/adopt-etc.sh"
 bash "$dotfiles_dir/setup/migrate-k9s.sh"
+bash "$dotfiles_dir/setup/migrate-agents.sh"
 
-sudo -H "$nix_bin" --extra-experimental-features "nix-command flakes" \
+sudo -H env "${dotfiles_env[@]}" "$nix_bin" --extra-experimental-features "nix-command flakes" \
   run "github:LnL7/nix-darwin/$darwin_rev#darwin-rebuild" -- \
-  switch --flake "$dotfiles_dir#$configured_host-bootstrap" --no-write-lock-file
+  switch --flake "$dotfiles_dir#$flake_profile-bootstrap" --impure --no-write-lock-file
 
-echo "Bootstrap complete. Use ./rebuild.sh for future changes."
+# Agent CLIs that manage themselves run as the normal user after activation.
+# A network failure here must not undo a completed system setup.
+bash "$dotfiles_dir/setup/agents.sh" ||
+  echo "Agent setup did not finish; rerun it later with 'make agents'."
+
+echo "Bootstrap complete. Reopen your terminal, then use 'make' for future changes."

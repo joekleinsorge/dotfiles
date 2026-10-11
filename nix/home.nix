@@ -1,17 +1,21 @@
-{ config, pkgs, dotfilesPath, ... }:
+{ config, lib, pkgs, dotfilesPath, ... }:
 
 let
   liveLink = relativePath:
     config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/${relativePath}";
-  agentGuidance = ''
-    # Global agent guidance
 
-    - Preserve unrelated user changes and never discard work to simplify a task.
-    - Keep credentials, tokens, private keys, generated logs, caches, and session state out of version control.
-    - Prefer small, reversible changes and validate behavior before reporting completion.
-    - Ask before applying system configuration, publishing changes, or taking destructive actions outside the requested scope.
-    - Do not add agent attribution or co-author lines to commits.
-  '';
+  # One guidance file and one skills directory serve every agent. Codex and pi
+  # both read ~/.agents/skills; Claude Code reads only ~/.claude/skills. Each
+  # skill is linked individually so tools keep their own writable skill
+  # directories for built-in and synced skills.
+  agentGuidance = liveLink "agents/AGENTS.md";
+  skillNames = builtins.attrNames
+    (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../agents/skills));
+  skillLinks = destination: lib.listToAttrs (map
+    (name: lib.nameValuePair "${destination}/${name}" {
+      source = liveLink "agents/skills/${name}";
+    })
+    skillNames);
 in {
   home.stateVersion = "24.11";
 
@@ -42,10 +46,11 @@ in {
       recursive = true;
     };
 
-    ".codex/AGENTS.md".text = agentGuidance;
-    ".claude/CLAUDE.md".text = agentGuidance;
-    ".config/opencode/AGENTS.md".text = agentGuidance;
-  };
+    ".codex/AGENTS.md".source = agentGuidance;
+    ".claude/CLAUDE.md".source = agentGuidance;
+    ".config/opencode/AGENTS.md".source = agentGuidance;
+    ".pi/agent/AGENTS.md".source = agentGuidance;
+  } // skillLinks ".agents/skills" // skillLinks ".claude/skills";
 
   home.sessionVariables = {
     EDITOR = "nvim";

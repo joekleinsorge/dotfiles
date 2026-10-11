@@ -4,31 +4,63 @@ Works on macOS and Windows.
 
 ## macOS setup
 
-Install Apple's command line tools and wait for the installer to finish:
+On a new Mac, run this from your normal account:
 
 ```bash
-xcode-select --install
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/joekleinsorge/dotfiles/main/setup/install.sh)"
 ```
 
-Install Nix using the [official instructions](https://nixos.org/download/), then
-reopen your terminal, and clone the repository:
+It installs Apple's command line tools and Nix (the official multi-user
+installer) when they are missing, clones this repository to `~/git/dotfiles`,
+and runs `make`, which bootstraps nix-darwin. Set `DOTFILES_DIR` to clone
+elsewhere. Every step is skipped when already done. On a Mac that already has
+the checkout, run `make` from it instead.
 
-```bash
-mkdir -p ~/git
-git clone https://github.com/JoeKleinsorge/dotfiles.git ~/git/dotfiles
-cd ~/git/dotfiles
-```
+Nothing in the repository needs editing per machine. The scripts detect the
+account, checkout path, and architecture, and pass them to the flake. They also
+pick a profile:
 
-Review `dotfilesConfig` in `flake.nix`: the defaults require the account `joe`,
-Apple Silicon, and `/Users/joe/git/dotfiles`. Adjust these values for your Mac,
-then run `make`. It automatically bootstraps when nix-darwin is absent.
-Use your normal account; the script asks for sudo only when needed.
-The checkout must stay at the configured path because terminal files link to it.
+- `work` on a Mac enrolled in device management (MDM), otherwise `personal`.
+- The choice is remembered in `~/.config/dotfiles/profile`.
+- Override it with `DOTFILES_PROFILE=work make` (or `personal`).
+
+Shared configuration lives in `nix/darwin.nix` and `nix/home.nix`. Profile-only
+packages and apps live in `nix/profiles/personal.nix` and
+`nix/profiles/work.nix`. This repository is public, so keep employer names and
+endpoints out of the work profile.
+
+Use your normal account; the scripts ask for sudo only when needed, and Touch
+ID works for sudo after the first activation. Terminal files link to the
+checkout, so if you move it, run `make` again from the new location.
 
 The bootstrap validates the machine and builds the system before moving shell
-configuration files. Existing shell files are preserved as `.before-nix-darwin`;
-Home Manager preserves conflicting home files as `.pre-nix`. If a backup already
+configuration files. Existing `/etc` shell files (`bashrc`, `zshrc`, `zprofile`,
+`zshenv`) are preserved as `.before-nix-darwin`, with a timestamp suffix if that
+backup already exists. Every rebuild repeats this step because macOS updates
+restore those files and would otherwise block activation. Home Manager
+preserves conflicting home files as `.pre-nix`. If a `.pre-nix` backup already
 exists, review it before retrying instead of deleting it blindly.
+
+Home Manager owns the links to `~/.zshrc`, `~/.config/nvim`, and the other
+terminal configs. Don't replace them by hand with `ln -s` or copies; if they
+drift, `make` restores them.
+`make doctor` reports drift without changing anything: replaced links, `/etc`
+files restored by macOS updates, a missing Ghostty app, or missing agent CLIs.
+
+### Coding agents
+
+Claude Code and Codex are Homebrew casks. pi installs and updates itself, so
+bootstrap runs its official installer; `make agents` repeats that if pi is
+missing and restores the pi packages in `agents/pi-packages.txt` and the
+Claude Code plugins in `agents/claude-plugins.txt`. It only installs what is
+missing.
+
+`agents/AGENTS.md` is the global guidance for Claude Code, Codex, pi, and
+opencode. Skills live in `agents/skills/<name>/SKILL.md` and are linked into
+`~/.claude/skills` (Claude Code) and `~/.agents/skills` (Codex and pi). Both
+are live links, so edits apply without a rebuild. Adding a new skill directory
+needs one `make`. Each tool's own settings, credentials, and built-in skills
+stay local and untracked.
 
 After activation, reopen your terminal and run `make vscode` to restore editor
 extensions. Marketplace downloads are separate so a retired extension or network
@@ -94,9 +126,10 @@ WezTerm's Lua focus-dependent color/opacity changes and tab-button controls
 do not map directly to Ghostty. Existing WezTerm installations are not
 automatically uninstalled because Homebrew cleanup is intentionally disabled.
 
-Machine-specific values live together in `dotfilesConfig` in `flake.nix`.
-Change the username, host label, architecture, and checkout path there before
-the first activation if this is not Joe's Apple Silicon Mac.
+The flake defines `personal` and `work` configurations, each with a one-time
+`-bootstrap` variant. The machine's account, checkout path, and architecture
+come from `DOTFILES_*` environment variables that the scripts set, so they
+evaluate with `--impure`. Pure evaluation falls back to `joe` on Apple Silicon.
 
 The first activation performs safety checks, lets `nix-homebrew` install or
 adopt Homebrew using a one-time bootstrap configuration, migrates the legacy

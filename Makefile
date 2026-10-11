@@ -1,6 +1,6 @@
 .POSIX:
 
-.PHONY: default bootstrap mac rebuild update preferences github check runtime-check nix-check shell-check nvim-check ghostty-check windows wsl vscode
+.PHONY: default bootstrap mac rebuild update preferences github agents doctor check runtime-check nix-check shell-check nvim-check ghostty-check windows wsl vscode
 
 
 default:
@@ -35,6 +35,12 @@ update:
 vscode:
 	bash ./setup/vscode.sh
 
+agents:
+	bash ./setup/agents.sh
+
+doctor:
+	bash ./setup/doctor.sh
+
 preferences:
 	sh ./mac/set_defaults.sh
 
@@ -58,10 +64,11 @@ nix-check:
 	@nix_bin="$$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"; \
 		"$$nix_bin" --extra-experimental-features "nix-command flakes" flake check --no-build
 	@nix_bin="$$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"; \
-		host="$$($$nix_bin --extra-experimental-features 'nix-command flakes' eval --raw .#lib.dotfilesConfig.hostname)"; \
-		"$$nix_bin" --extra-experimental-features "nix-command flakes" \
-		build ".#darwinConfigurations.$$host.system" \
-		".#darwinConfigurations.$$host-bootstrap.system" --dry-run
+		case "$$(uname -m)" in x86_64) system=x86_64-darwin ;; *) system=aarch64-darwin ;; esac; \
+		DOTFILES_USER="$$(id -un)" DOTFILES_PATH="$(CURDIR)" DOTFILES_SYSTEM="$$system" \
+		"$$nix_bin" --extra-experimental-features "nix-command flakes" build --impure --dry-run \
+		.#darwinConfigurations.personal.system .#darwinConfigurations.personal-bootstrap.system \
+		.#darwinConfigurations.work.system .#darwinConfigurations.work-bootstrap.system
 
 shell-check:
 	@command -v shellcheck >/dev/null 2>&1 || { echo "shellcheck is required"; exit 1; }
@@ -75,9 +82,9 @@ runtime-check:
 			\( -name '*.log' -o -name '.nvimlog' -o -name '*.pre-nix' \) -print; \
 		exit 1; \
 	fi
-	@if find terminal/k9s -type l -print | grep -q .; then \
-		echo "K9s source files must be regular files, not runtime symlinks."; \
-		find terminal/k9s -type l -print; \
+	@if find terminal -type l -print | grep -q .; then \
+		echo "Terminal source files must be regular files, not runtime symlinks."; \
+		find terminal -type l -print; \
 		exit 1; \
 	fi
 

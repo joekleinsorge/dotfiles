@@ -12,37 +12,51 @@
 
   outputs = { darwin, home-manager, nix-homebrew, ... }:
     let
-      dotfilesConfig = rec {
-        system = "aarch64-darwin";
-        username = "joe";
-        hostname = "joe";
-        dotfilesPath = "/Users/${username}/git/dotfiles";
+      # The setup scripts detect the machine and pass it through the
+      # environment with --impure, so no Mac needs its own edit here. Pure
+      # evaluation (flake check, CI) falls back to the defaults below.
+      envOr = name: default:
+        let value = builtins.getEnv name;
+        in if value == "" then default else value;
+      machine = rec {
+        username = envOr "DOTFILES_USER" "joe";
+        system = envOr "DOTFILES_SYSTEM" "aarch64-darwin";
+        dotfilesPath = envOr "DOTFILES_PATH" "/Users/${username}/git/dotfiles";
       };
-      inherit (dotfilesConfig) system username hostname dotfilesPath;
-      mkDarwin = extraModules: darwin.lib.darwinSystem {
+      inherit (machine) username system dotfilesPath;
+
+      profiles = [ "personal" "work" ];
+
+      mkDarwin = profile: extraModules: darwin.lib.darwinSystem {
         inherit system;
-        specialArgs = { inherit username system; };
+        specialArgs = { inherit username system profile; };
         modules = [
           ./nix/darwin.nix
+          ./nix/profiles/${profile}.nix
           nix-homebrew.darwinModules.nix-homebrew
           home-manager.darwinModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "pre-nix";
-            home-manager.extraSpecialArgs = { inherit dotfilesPath; };
+            home-manager.extraSpecialArgs = { inherit dotfilesPath profile; };
             home-manager.users.${username} = import ./nix/home.nix;
           }
         ] ++ extraModules;
       };
-    in {
-      lib.dotfilesConfig = dotfilesConfig;
 
-      darwinConfigurations = {
-        ${hostname} = mkDarwin [ ];
-        "${hostname}-bootstrap" = mkDarwin [
+      # Each profile has a normal configuration and a one-time bootstrap
+      # variant that lets nix-homebrew adopt an existing Homebrew install.
+      configurationsFor = profile: {
+        ${profile} = mkDarwin profile [ ];
+        "${profile}-bootstrap" = mkDarwin profile [
           { nix-homebrew.autoMigrate = true; }
         ];
       };
+    in {
+      lib = { inherit machine profiles; };
+
+      darwinConfigurations =
+        builtins.foldl' (all: profile: all // configurationsFor profile) { } profiles;
     };
 }

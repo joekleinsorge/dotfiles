@@ -253,4 +253,4 @@ export NVM_DIR="$HOME/.nvm"
 
 
 # Added by Antigravity CLI installer
-export PATH="/Users/joe/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"

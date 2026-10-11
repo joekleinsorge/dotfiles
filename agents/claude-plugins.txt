@@ -1,0 +1,2 @@
+# Claude Code plugins restored by `make agents`. One plugin@marketplace per line.
+mattpocock-skills@claude-plugins-official

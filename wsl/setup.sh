@@ -122,6 +122,16 @@ link_path "$repo_root/terminal/k9s/aliases.yaml" "$HOME/.config/k9s/aliases.yaml
 link_path "$repo_root/terminal/k9s/config.yaml" "$HOME/.config/k9s/config.yaml"
 link_path "$repo_root/terminal/k9s/plugins.yaml" "$HOME/.config/k9s/plugins.yaml"
 
+# Shared agent guidance and skills, matching nix/home.nix on macOS.
+for guidance_path in .claude/CLAUDE.md .codex/AGENTS.md .config/opencode/AGENTS.md .pi/agent/AGENTS.md; do
+    link_path "$repo_root/agents/AGENTS.md" "$HOME/$guidance_path"
+done
+for skill in "$repo_root"/agents/skills/*/; do
+    skill="${skill%/}"
+    link_path "$skill" "$HOME/.agents/skills/$(basename "$skill")"
+    link_path "$skill" "$HOME/.claude/skills/$(basename "$skill")"
+done
+
 if [ -x "$(command -v zsh)" ] && [ "${SHELL:-}" != "$(command -v zsh)" ]; then
     echo "Setting zsh as default shell..."
     chsh -s "$(command -v zsh)" "$USER" || true
