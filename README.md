@@ -24,10 +24,18 @@ pick a profile:
 - The choice is remembered in `~/.config/dotfiles/profile`.
 - Override it with `DOTFILES_PROFILE=work make` (or `personal`).
 
-Shared configuration lives in `nix/darwin.nix` and `nix/home.nix`. Profile-only
-packages and apps live in `nix/profiles/personal.nix` and
-`nix/profiles/work.nix`. This repository is public, so keep employer names and
-endpoints out of the work profile.
+Shared configuration lives in `nix/darwin.nix` and `nix/home.nix`; everything
+there reaches both Macs. Home-only apps and tools (media, games, Docker
+Desktop, Emacs, Tailscale, and similar) live in `nix/profiles/personal.nix` and
+never reach the work laptop. Work-only additions go in `nix/profiles/work.nix`.
+This repository is public, so keep employer names and endpoints out of it.
+
+On the personal profile, Homebrew is kept exactly in sync with the
+configuration: a formula, cask, or tap that isn't declared is removed on the
+next `make`, so declare anything you install with `brew install`. The cleanup
+is limited to formulae, casks, and taps; VS Code extensions and npm, cargo, go,
+and uv packages are never touched. The work profile never removes Homebrew
+packages, so anything the company installs with Homebrew is safe.
 
 Use your normal account; the scripts ask for sudo only when needed, and Touch
 ID works for sudo after the first activation. Terminal files link to the
@@ -67,10 +75,15 @@ extensions. Marketplace downloads are separate so a retired extension or network
 failure cannot prevent the system setup from completing. Sign in to services
 such as GitHub separately and grant macOS Accessibility permission to AeroSpace.
 
-macOS uses Nix Python; project-specific Python versions belong in project
-environments. Homebrew installs libraries such as OpenSSL and libssh2 when
-needed as dependencies. Removing explicit entries does not uninstall existing
-packages while cleanup is disabled.
+Command line tools come from Nix, and `.zshrc` puts Homebrew last on `PATH` so
+it only supplies what Nix doesn't. macOS uses Nix Python and Node;
+project-specific versions belong in project environments, and nvm still loads
+on first use for projects that pin Node.
+
+Most macOS preferences (typing, trackpad, Finder, Dock) are declared in
+`system.defaults` and applied by every rebuild; some take effect after logging
+out. The personal profile also turns off the downloaded-app quarantine prompt
+and enables automatic updates; the work profile leaves both to IT.
 
 After the first activation, use `make` or `./rebuild.sh` to apply changes.
 Repository downloads and macOS preference changes are intentionally separate:
@@ -123,8 +136,7 @@ Ghostty is the macOS terminal; WezTerm configuration remains for Windows/WSL.
 Ghostty uses the Pnevma palette, bold 16-point JetBrains Mono Nerd Font,
 90% background opacity, zero padding, and a compact native tab titlebar.
 WezTerm's Lua focus-dependent color/opacity changes and tab-button controls
-do not map directly to Ghostty. Existing WezTerm installations are not
-automatically uninstalled because Homebrew cleanup is intentionally disabled.
+do not map directly to Ghostty.
 
 The flake defines `personal` and `work` configurations, each with a one-time
 `-bootstrap` variant. The machine's account, checkout path, and architecture
@@ -171,8 +183,12 @@ On macOS it also validates Ghostty's configuration with the installed Ghostty.
 K9s cluster sessions are ignored by Git and kept local; shared settings and
 themes remain tracked.
 
-The macOS preference script is installed below `/etc` in a directory derived
-from the configured username and is only run through `make preferences`; a
-normal rebuild does not reapply those interactive-user settings.
+`make preferences` applies what `system.defaults` cannot: the startup chime,
+Notification Center, and the sandboxed Safari and Mail settings. Grant your
+terminal Full Disk Access first. A normal rebuild does not run it.
+
+GitHub Actions runs the flake, profile, and script checks on every push and
+pull request. Every Monday it opens a pull request that updates `flake.lock`
+and checks the result; merge it, then run `make` on each Mac.
 
 If you use `make` from Git Bash/MSYS, `make` auto-detects Windows and runs the same script.

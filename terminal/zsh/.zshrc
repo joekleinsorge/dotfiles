@@ -1,3 +1,6 @@
+# Keep PATH entries unique when shells nest or this file is re-sourced.
+typeset -U path
+
 case "$(uname -s)" in
   Darwin) is_macos=true ;;
   *) is_macos=false ;;
@@ -11,10 +14,14 @@ elif [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-export PATH=$HOME/bin:/usr/local/bin:$PATH
+export PATH=$HOME/bin:$PATH
+# On macOS, Nix is the source of truth for CLI tools. Homebrew stays on PATH
+# only for what Nix does not provide, so it goes last.
+if $is_macos && [ -n "${HOMEBREW_PREFIX:-}" ]; then
+  path=(${path:#$HOMEBREW_PREFIX/(bin|sbin)} "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin")
+fi
 [ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
 [ -d "$HOME/.local/share/nvim/mason/bin" ] && export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
-[ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/ruby/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
 [ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/openjdk/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
 export PATH="$HOME/.emacs.d/bin:$PATH"
 export EDITOR="nvim"
@@ -25,7 +32,16 @@ export KUBE_EDITOR="nvim"
 
 command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
 
-autoload -U +X compinit && compinit
+# Rebuild the completion cache at most once a day; otherwise trust it.
+autoload -Uz compinit
+() {
+  setopt local_options extended_glob
+  if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+  else
+    compinit -C
+  fi
+}
 [[ $commands[kubectl] ]] && source <(kubectl completion zsh)
 compdef kubecolor=kubectl
 command -v kubecolor >/dev/null 2>&1 && alias kubectl="kubecolor"
@@ -41,7 +57,7 @@ elif command -v wezterm >/dev/null 2>&1; then
 fi
 alias t='tmux'
 alias tl='tmux list-sessions'
-alias tr='tmux source-file ~/.tmux.conf \; display-message "tmux config reloaded"'
+alias treload='tmux source-file ~/.tmux.conf \; display-message "tmux config reloaded"'
 alias tkill='tmux kill-session -t'
 alias tkillall='tmux kill-server'
 alias gs="git status"
@@ -247,9 +263,16 @@ pods(){
   fzf --preview="kubectl logs {2} --namespace {1} --all-containers" --preview-window=down:80%
 }
 
+# Node comes from Nix. nvm loads on first use for projects that pin a version.
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  nvm() {
+    unfunction nvm
+    \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    nvm "$@"
+  }
+fi
 
 
 # Added by Antigravity CLI installer

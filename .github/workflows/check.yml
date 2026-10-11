@@ -1,0 +1,24 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # Evaluates and dry-builds both macOS profiles, so it needs a Mac runner.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      # Tools come from the locked nixpkgs so CI matches the configured Macs.
+      - name: Check flake, profiles, scripts, and Neovim formatting
+        run: |
+          nix shell --inputs-from . nixpkgs#ripgrep nixpkgs#shellcheck nixpkgs#stylua \
+            --command make runtime-check nix-check shell-check
+          nix shell --inputs-from . nixpkgs#stylua --command stylua --check terminal/nvim

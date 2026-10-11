@@ -51,6 +51,20 @@ else
   bad "no Home Manager generation found; run 'make'"
 fi
 
+echo "Command resolution"
+# A fresh login shell shows what new terminals get, not this shell's PATH.
+# shellcheck disable=SC2016 # $PATH must expand in the inner zsh.
+login_path="$(env -i HOME="$HOME" USER="$USER" SHELL=/bin/zsh TERM=dumb \
+  /bin/zsh -l -i -c 'print -r -- $PATH' 2>/dev/null | tail -n 1)"
+for tool in git python3 node nvim kubectl; do
+  resolved="$(PATH="$login_path" command -v "$tool" 2>/dev/null)"
+  case "$resolved" in
+    /run/current-system/* | /etc/profiles/* | "$HOME"/.nix-profile/*) ok "$tool comes from Nix" ;;
+    "") bad "$tool is not on PATH" ;;
+    *) bad "$tool resolves to $resolved instead of Nix" ;;
+  esac
+done
+
 echo "Applications"
 if [ -e /Applications/Ghostty.app ]; then
   ok "Ghostty.app is in /Applications"
