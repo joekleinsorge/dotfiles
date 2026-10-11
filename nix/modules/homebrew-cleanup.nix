@@ -11,7 +11,10 @@ in {
     "removing Homebrew formulae, casks, and taps this configuration does not declare";
 
   config = lib.mkIf config.dotfiles.homebrewCleanup {
-    system.activationScripts.postActivation.text = lib.mkAfter ''
+    # Runs before the other post-activation steps: uninstalling a cask such
+    # as ghostty deletes its /Applications path, which may already be the
+    # Nix app link that a later step recreates.
+    system.activationScripts.postActivation.text = lib.mkBefore ''
       echo "Removing Homebrew formulae, casks, and taps that are not declared..." >&2
       sudo --user=${username} --set-home \
         env PATH="${config.homebrew.prefix}/bin:$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
