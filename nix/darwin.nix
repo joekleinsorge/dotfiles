@@ -197,8 +197,8 @@
       "shortcat"
       "spotify"
       "visual-studio-code"
+      "wezterm"
       "zoom"
-      # Ghostty is installed through nix/home.nix (ghostty-bin).
     ];
     onActivation = {
       autoUpdate = false;
@@ -214,26 +214,6 @@
   # reversible step. They affect the interactive user session and should not
   # run as root during every system activation.
   environment.etc."${username}-dotfiles/mac-set-defaults.sh".source = ../mac/set_defaults.sh;
-
-  # Nix profiles contain the Ghostty.app bundle, but Finder does not search
-  # profile application directories. Expose the immutable Nix app at the
-  # conventional macOS location without copying it out of the store.
-  system.activationScripts.postActivation.text = lib.mkAfter ''
-    ghostty_app="${pkgs.ghostty-bin}/Applications/Ghostty.app"
-    if [ -d "$ghostty_app" ]; then
-      if [ -L /Applications/Ghostty.app ]; then
-        case "$(readlink /Applications/Ghostty.app)" in
-          /nix/store/*/Applications/Ghostty.app)
-            ln -sfn "$ghostty_app" /Applications/Ghostty.app ;;
-          *) echo "Preserving existing Ghostty symlink." ;;
-        esac
-      elif [ ! -e /Applications/Ghostty.app ]; then
-        ln -s "$ghostty_app" /Applications/Ghostty.app
-      fi
-      mkdir -p "/Applications/Nix Apps"
-      ln -sfn "$ghostty_app" "/Applications/Nix Apps/Ghostty.app"
-    fi
-  '';
 
   system.stateVersion = 6;
 }

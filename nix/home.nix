@@ -21,7 +21,6 @@ in {
 
   home.packages = with pkgs; [
     fd
-    ghostty-bin
     python3Packages.virtualenv
     sqlite
     unzip
@@ -33,7 +32,9 @@ in {
     ".tmux.conf".source = liveLink "terminal/tmux/.tmux.conf";
     ".config/nvim".source = liveLink "terminal/nvim";
     ".config/starship.toml".source = liveLink "terminal/starship/starship.toml";
-    ".config/ghostty/config".source = liveLink "terminal/ghostty/config";
+    # WezTerm loads color schemes from the themes directory beside its config.
+    ".config/wezterm/wezterm.lua".source = liveLink "terminal/wezterm/.wezterm.lua";
+    ".config/wezterm/themes".source = liveLink "terminal/wezterm/themes";
     ".config/aerospace/aerospace.toml".source = liveLink "mac/.aerospace.toml";
 
     # Keep the K9s destination writable for logs and other runtime state while

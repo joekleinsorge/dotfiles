@@ -1,6 +1,6 @@
 .POSIX:
 
-.PHONY: default bootstrap mac rebuild update preferences github agents doctor check runtime-check nix-check shell-check nvim-check ghostty-check windows wsl vscode
+.PHONY: default bootstrap mac rebuild update preferences github agents doctor check runtime-check nix-check shell-check nvim-check wezterm-check windows wsl vscode
 
 
 default:
@@ -88,16 +88,10 @@ runtime-check:
 		exit 1; \
 	fi
 
-ghostty-check:
-	@if [ "$$(uname -s)" = Darwin ]; then \
-		ghostty_bin="$$(command -v ghostty 2>/dev/null || echo /Applications/Ghostty.app/Contents/MacOS/ghostty)"; \
-		[ -x "$$ghostty_bin" ] || { echo "Install Ghostty before running ghostty-check."; exit 1; }; \
-		"$$ghostty_bin" +validate-config --config-file="$(CURDIR)/terminal/ghostty/config"; \
-	else \
-		echo "Skipping macOS Ghostty validation on this platform."; \
-	fi
+wezterm-check:
+	luac -p terminal/wezterm/.wezterm.lua
 
-check: runtime-check nix-check shell-check nvim-check ghostty-check
+check: runtime-check nix-check shell-check nvim-check wezterm-check
 
 wsl:
 	bash ./wsl/setup.sh

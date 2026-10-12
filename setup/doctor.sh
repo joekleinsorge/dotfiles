@@ -66,10 +66,10 @@ for tool in git python3 node nvim kubectl; do
 done
 
 echo "Applications"
-if [ -e /Applications/Ghostty.app ]; then
-  ok "Ghostty.app is in /Applications"
+if [ -e /Applications/WezTerm.app ]; then
+  ok "WezTerm.app is in /Applications"
 else
-  bad "/Applications/Ghostty.app is missing; run 'make'"
+  bad "/Applications/WezTerm.app is missing; run 'make'"
 fi
 for tool in claude codex pi; do
   if command -v "$tool" >/dev/null 2>&1; then

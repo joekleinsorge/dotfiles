@@ -1,11 +1,11 @@
 [[on-window-detected]]
-if.app-id="com.mitchellh.ghostty"
+if.app-id="com.github.wez.wezterm"
 run= [
   "layout tiling",
 ]
 
 [mode.main.binding]
-alt-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
+alt-enter = 'exec-and-forget open -n /Applications/WezTerm.app'
 
 
 alt-h = 'focus left'

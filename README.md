@@ -53,7 +53,8 @@ Home Manager owns the links to `~/.zshrc`, `~/.config/nvim`, and the other
 terminal configs. Don't replace them by hand with `ln -s` or copies; if they
 drift, `make` restores them.
 `make doctor` reports drift without changing anything: replaced links, `/etc`
-files restored by macOS updates, a missing Ghostty app, or missing agent CLIs.
+files restored by macOS updates, Homebrew shadowing Nix tools, a missing
+WezTerm app, or missing agent CLIs.
 
 ### Coding agents
 
@@ -129,14 +130,14 @@ links alone; restore an old file from the backup directory's `original` entry.
 
 The Nix flake is now the macOS source of truth for CLI packages and links the
 existing terminal configuration into your home directory. GUI applications are
-declarative, and Ghostty is installed from Nix with an app link exposed under
-`/Applications` for Finder and Launchpad.
+declarative.
 
-Ghostty is the macOS terminal; WezTerm configuration remains for Windows/WSL.
-Ghostty uses the Pnevma palette, bold 16-point JetBrains Mono Nerd Font,
-90% background opacity, zero padding, and a compact native tab titlebar.
-WezTerm's Lua focus-dependent color/opacity changes and tab-button controls
-do not map directly to Ghostty.
+WezTerm is the terminal on every platform, from one configuration in
+`terminal/wezterm`. On macOS it is a Homebrew cask, and Home Manager links the
+config and its themes into `~/.config/wezterm`, so edits apply on the next
+reload without a rebuild. It uses the Pnevma palette, bold 16-point JetBrains
+Mono, 90% background opacity that dims when the window loses focus, and zero
+padding. AeroSpace opens a new WezTerm window with Alt-Enter.
 
 The flake defines `personal` and `work` configurations, each with a one-time
 `-bootstrap` variant. The machine's account, checkout path, and architecture
@@ -179,7 +180,7 @@ Run this after bootstrap, when its validation tools are installed. It checks
 the flake, performs a dry-run build, validates shell scripts, and
 runs the Neovim formatting, syntax, and isolated headless smoke checks. It also
 rejects generated logs and Home Manager backup files in the repository.
-On macOS it also validates Ghostty's configuration with the installed Ghostty.
+It also checks the WezTerm configuration's Lua syntax.
 K9s cluster sessions are ignored by Git and kept local; shared settings and
 themes remain tracked.
 
