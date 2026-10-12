@@ -60,5 +60,17 @@ in {
 
   programs.home-manager.enable = true;
 
+  # System Settings stores modifier mappings in the user's ByHost domain.
+  # Scope the Alt/Windows swap to Wireless Gaming Keyboard (USB 320f:5088),
+  # preserving the built-in keyboard and unrelated device preferences.
+  home.activation.externalKeyboardModifiers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run /usr/bin/defaults -currentHost write NSGlobalDomain \
+      com.apple.keyboard.modifiermapping.12815-20616-0 -array \
+      '{ HIDKeyboardModifierMappingSrc = 30064771298; HIDKeyboardModifierMappingDst = 30064771299; }' \
+      '{ HIDKeyboardModifierMappingSrc = 30064771299; HIDKeyboardModifierMappingDst = 30064771298; }' \
+      '{ HIDKeyboardModifierMappingSrc = 30064771302; HIDKeyboardModifierMappingDst = 30064771303; }' \
+      '{ HIDKeyboardModifierMappingSrc = 30064771303; HIDKeyboardModifierMappingDst = 30064771302; }'
+  '';
+
   # Marketplace downloads run explicitly via make vscode after the app exists.
 }

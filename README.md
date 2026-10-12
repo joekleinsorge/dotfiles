@@ -144,6 +144,27 @@ reload without a rebuild. It uses the Pnevma palette, bold 16-point JetBrains
 Mono, 90% background opacity that dims when the window loses focus, and zero
 padding. AeroSpace opens a new WezTerm window with Alt-Enter.
 
+### External Windows keyboard on macOS
+
+Home Manager declares the modifier swap in `nix/home.nix` for the Wireless
+Gaming Keyboard (USB vendor `0x320f`, product `0x5088`). Both left and right
+Alt keys act as Command; Windows keys act as Option. This matches the Mac
+keyboard's physical modifier positions. The built-in keyboard is unchanged.
+
+Use **Alt+C / Alt+V** on the external keyboard and **Command+C / Command+V**
+on the Mac keyboard to copy/paste, including in WezTerm. **Ctrl+C** still
+interrupts terminal commands. Shortcuts described as Option (including the
+AeroSpace launcher above) use the Windows key on this external keyboard.
+
+Run `make` to restore the mapping on either Nix profile. The activation writes
+the user's host-specific macOS modifier preference; log out and back in if
+macOS has not picked it up. To use another keyboard model, obtain its vendor
+and product IDs with `hidutil list` and update the decimal IDs in the preference
+key. To undo the swap, remove the activation block and restore this keyboard's
+defaults in System Settings → Keyboard → Keyboard Shortcuts → Modifier Keys.
+
+### Rebuilding and validation
+
 The flake defines `personal` and `work` configurations. The machine's account, checkout path, and architecture
 come from `DOTFILES_*` environment variables that the scripts set, so they
 evaluate with `--impure`. Pure evaluation falls back to `joe` on Apple Silicon.
