@@ -41,8 +41,13 @@ Use your normal account; the scripts ask for sudo only when needed, and Touch
 ID works for sudo after the first activation. Terminal files link to the
 checkout, so if you move it, run `make` again from the new location.
 
-The bootstrap validates the machine and builds the system before moving shell
-configuration files. Existing `/etc` shell files (`bashrc`, `zshrc`, `zprofile`,
+`make` builds the configuration as your normal user first, so a broken change
+never needs sudo, then shows the package changes and any Homebrew packages that
+would be removed, and asks before removing them. Only then does it apply the
+configuration with sudo. The first run and later rebuilds use the same path.
+`make diff` shows the same preview without applying anything.
+
+Before applying, `make` moves aside shell files that block activation. Existing `/etc` shell files (`bashrc`, `zshrc`, `zprofile`,
 `zshenv`) are preserved as `.before-nix-darwin`, with a timestamp suffix if that
 backup already exists. Every rebuild repeats this step because macOS updates
 restore those files and would otherwise block activation. Home Manager
@@ -139,25 +144,13 @@ reload without a rebuild. It uses the Pnevma palette, bold 16-point JetBrains
 Mono, 90% background opacity that dims when the window loses focus, and zero
 padding. AeroSpace opens a new WezTerm window with Alt-Enter.
 
-The flake defines `personal` and `work` configurations, each with a one-time
-`-bootstrap` variant. The machine's account, checkout path, and architecture
+The flake defines `personal` and `work` configurations. The machine's account, checkout path, and architecture
 come from `DOTFILES_*` environment variables that the scripts set, so they
 evaluate with `--impure`. Pure evaluation falls back to `joe` on Apple Silicon.
 
-The first activation performs safety checks, lets `nix-homebrew` install or
-adopt Homebrew using a one-time bootstrap configuration, migrates the legacy
-K9s directory symlink if present, and applies the locked flake. The bootstrap
-launcher uses the exact nix-darwin revision recorded in `flake.lock`:
-
-```bash
-make bootstrap
-```
-
-For normal updates, edit files in this repository and run:
-
-```bash
-./rebuild.sh
-```
+On the first run, `nix-homebrew` installs Homebrew, or adopts an existing
+installation while keeping its packages. For later changes, edit files in this
+repository and run `make` again.
 
 Normal rebuilds consume `flake.lock` without changing it. Update dependencies
 deliberately, followed by the complete validation suite, with:

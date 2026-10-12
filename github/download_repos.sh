@@ -1,33 +1,22 @@
 #!/bin/bash
-# Assumes gh cli is installed and gh auth login has been set
+# Clones or updates every non-archived repository of the signed-in GitHub
+# account into ~/git and installs pre-commit hooks where configured.
+# Assumes gh is installed and `gh auth login` has been run.
 
 mkdir -p ~/git
-cd ~/git || exit
-repos=$(gh repo list --no-archived --json name | jq -r '.[].name')
-for repo in $repos
-do
-    if [ -d "$repo" ]
-    then
-        # If repo already exists, pull latest changes
-        echo "Pulling latest changes for $repo"
-        cd "$repo" || exit
-        git pull
-        cd ..
-    else
-        # If repo doesn't exist, clone it
-        echo "cloning $repo"
-        gh repo clone "$repo"
-    fi
-        # Check if repo has a pre-commit hook
-    if [ ! -f "$repo/.pre-commit-config.yaml" ]
-    then
-        echo "No pre-commit hook for $repo"
-        continue
-    else
-        cd "$repo" || exit
-        # Install pre-commit hooks
-        echo "Installing pre-commit hooks for $repo"
-        pre-commit install
-	cd ..
-    fi
+cd ~/git || exit 1
+
+# gh lists only 30 repositories unless a limit is given.
+gh repo list --no-archived --limit 1000 --json name --jq '.[].name' | while read -r repo; do
+  if [ -d "$repo" ]; then
+    echo "Pulling latest changes for $repo"
+    git -C "$repo" pull --ff-only || echo "Could not update $repo; skipping."
+  else
+    echo "Cloning $repo"
+    gh repo clone "$repo" || { echo "Could not clone $repo; skipping."; continue; }
+  fi
+  if [ -f "$repo/.pre-commit-config.yaml" ]; then
+    echo "Installing pre-commit hooks for $repo"
+    (cd "$repo" && pre-commit install)
+  fi
 done

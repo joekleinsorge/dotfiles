@@ -27,7 +27,7 @@
 
       profiles = [ "personal" "work" ];
 
-      mkDarwin = profile: extraModules: darwin.lib.darwinSystem {
+      mkDarwin = profile: darwin.lib.darwinSystem {
         inherit system;
         specialArgs = { inherit username system profile; };
         modules = [
@@ -42,21 +42,12 @@
             home-manager.extraSpecialArgs = { inherit dotfilesPath profile; };
             home-manager.users.${username} = import ./nix/home.nix;
           }
-        ] ++ extraModules;
-      };
-
-      # Each profile has a normal configuration and a one-time bootstrap
-      # variant that lets nix-homebrew adopt an existing Homebrew install.
-      configurationsFor = profile: {
-        ${profile} = mkDarwin profile [ ];
-        "${profile}-bootstrap" = mkDarwin profile [
-          { nix-homebrew.autoMigrate = true; }
         ];
       };
     in {
       lib = { inherit machine profiles; };
 
-      darwinConfigurations =
-        builtins.foldl' (all: profile: all // configurationsFor profile) { } profiles;
+      darwinConfigurations = builtins.listToAttrs
+        (map (profile: { name = profile; value = mkDarwin profile; }) profiles);
     };
 }

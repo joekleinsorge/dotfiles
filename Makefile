@@ -1,31 +1,24 @@
 .POSIX:
 
-.PHONY: default bootstrap mac rebuild update preferences github agents doctor check runtime-check nix-check shell-check nvim-check wezterm-check windows wsl vscode
+.PHONY: default bootstrap mac rebuild diff update preferences github agents doctor check runtime-check nix-check shell-check nvim-check wezterm-check windows wsl vscode
 
 
 default:
 	@if [ "$(OS)" = "Windows_NT" ]; then \
-		$(MAKE) windows; \
+		$(MAKE) --no-print-directory windows; \
 	elif [ -n "$$WSL_DISTRO_NAME" ] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then \
-		$(MAKE) wsl; \
+		$(MAKE) --no-print-directory wsl; \
 	else \
-		$(MAKE) mac; \
-	fi
-
-bootstrap:
-	bash ./setup/mac.sh
-
-mac: rebuild
-
-rebuild:
-	@if command -v darwin-rebuild >/dev/null 2>&1 || [ -x /run/current-system/sw/bin/darwin-rebuild ]; then \
 		bash ./rebuild.sh; \
-	elif command -v nix >/dev/null 2>&1 || [ -x /nix/var/nix/profiles/default/bin/nix ]; then \
-		bash ./setup/mac.sh; \
-	else \
-		echo "Nix is not installed. Install it from https://nixos.org/download/ and run 'make bootstrap'."; \
-		exit 1; \
 	fi
+
+# The first run and every later rebuild use the same script.
+bootstrap mac rebuild:
+	bash ./rebuild.sh
+
+# Build and show what `make` would change, without applying anything.
+diff:
+	DOTFILES_DIFF_ONLY=1 bash ./rebuild.sh
 
 update:
 	@nix_bin="$$(command -v nix 2>/dev/null || echo /nix/var/nix/profiles/default/bin/nix)"; \
@@ -67,8 +60,7 @@ nix-check:
 		case "$$(uname -m)" in x86_64) system=x86_64-darwin ;; *) system=aarch64-darwin ;; esac; \
 		DOTFILES_USER="$$(id -un)" DOTFILES_PATH="$(CURDIR)" DOTFILES_SYSTEM="$$system" \
 		"$$nix_bin" --extra-experimental-features "nix-command flakes" build --impure --dry-run \
-		.#darwinConfigurations.personal.system .#darwinConfigurations.personal-bootstrap.system \
-		.#darwinConfigurations.work.system .#darwinConfigurations.work-bootstrap.system
+		.#darwinConfigurations.personal.system .#darwinConfigurations.work.system
 
 shell-check:
 	@command -v shellcheck >/dev/null 2>&1 || { echo "shellcheck is required"; exit 1; }

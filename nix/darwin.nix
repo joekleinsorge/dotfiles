@@ -166,11 +166,13 @@
     };
   };
 
-  # nix-homebrew owns the Homebrew installation. The separate bootstrap
-  # configuration enables autoMigrate for its one-time adoption only.
+  # nix-homebrew owns the Homebrew installation. autoMigrate adopts an
+  # existing Homebrew on the first run (keeping installed packages) and does
+  # nothing once nix-homebrew manages it.
   nix-homebrew = {
     enable = true;
     user = username;
+    autoMigrate = true;
   };
 
   # GUI applications and formulas without a stable nixpkgs equivalent remain
