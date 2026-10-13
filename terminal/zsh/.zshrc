@@ -27,7 +27,15 @@ export PATH="$HOME/.emacs.d/bin:$PATH"
 export EDITOR="nvim"
 export KUBE_EDITOR="nvim"
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# fzf >= 0.48 ships its own zsh integration; older installs use the legacy installer script.
+if command -v fzf >/dev/null 2>&1; then
+  if fzf_zsh=$(fzf --zsh 2>/dev/null); then
+    eval "$fzf_zsh"
+  elif [ -f ~/.fzf.zsh ]; then
+    source ~/.fzf.zsh
+  fi
+  unset fzf_zsh
+fi
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
 command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
