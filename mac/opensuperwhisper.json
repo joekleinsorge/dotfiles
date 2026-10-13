@@ -1,0 +1,16 @@
+{
+  "selectedEngine": "fluidaudio",
+  "fluidAudioModelVersion": "ultra",
+  "whisperLanguage": "en",
+  "holdToRecord": true,
+  "recordingTriggers": "{\"triggers\":[{\"modifier\":{\"_0\":\"leftControl\"}},{\"keyCombo\":{\"_0\":{\"carbonKeyCode\":49,\"carbonModifiers\":4608}}}]}",
+  "holdRecordingTriggers": "{\"triggers\":[]}",
+  "modifierOnlyHotkey": "leftControl",
+  "liveTranscriptionEnabled": true,
+  "aiPostProcessingEnabled": false,
+  "autoPasteTranscription": true,
+  "pasteInsteadOfTyping": true,
+  "autoCopyToClipboard": false,
+  "submitOnVoiceCommand": false,
+  "saveTranscriptionHistory": false
+}

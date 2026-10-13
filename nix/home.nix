@@ -60,17 +60,37 @@ in {
 
   programs.home-manager.enable = true;
 
-  # System Settings stores modifier mappings in the user's ByHost domain.
-  # Scope the Alt/Windows swap to Wireless Gaming Keyboard (USB 320f:5088),
-  # preserving the built-in keyboard and unrelated device preferences.
+  # AeroSpace rejects startup if both supported config paths exist. Preserve
+  # the legacy home config outside its search paths before linking the XDG one.
+  home.activation.migrateAeroSpaceConfig = lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
+    legacy="$HOME/.aerospace.toml"
+    if [ -e "$legacy" ] || [ -L "$legacy" ]; then
+      backupRoot="$HOME/.local/state/dotfiles/backups"
+      run mkdir -p "$backupRoot"
+      if [ -z "''${DRY_RUN:-}" ]; then
+        backupDir="$(/usr/bin/mktemp -d "$backupRoot/aerospace.XXXXXX")"
+        run mv "$legacy" "$backupDir/aerospace.toml"
+      else
+        echo "Would preserve $legacy under $backupRoot/aerospace.*"
+      fi
+    fi
+  '';
+
+  # Keep physical Alt as Option for AeroSpace, and Windows as Command.
+  # Clear the previous swap only for Wireless Gaming Keyboard (USB 320f:5088).
   home.activation.externalKeyboardModifiers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run /usr/bin/defaults -currentHost write NSGlobalDomain \
-      com.apple.keyboard.modifiermapping.12815-20616-0 -array \
-      '{ HIDKeyboardModifierMappingSrc = 30064771298; HIDKeyboardModifierMappingDst = 30064771299; }' \
-      '{ HIDKeyboardModifierMappingSrc = 30064771299; HIDKeyboardModifierMappingDst = 30064771298; }' \
-      '{ HIDKeyboardModifierMappingSrc = 30064771302; HIDKeyboardModifierMappingDst = 30064771303; }' \
-      '{ HIDKeyboardModifierMappingSrc = 30064771303; HIDKeyboardModifierMappingDst = 30064771302; }'
+      com.apple.keyboard.modifiermapping.12815-20616-0 -array
   '';
+
+  # Keep the global hold-to-talk shortcut available after login.
+  launchd.agents.opensuperwhisper = {
+    enable = true;
+    config = {
+      ProgramArguments = [ "/usr/bin/open" "-g" "-a" "/Applications/OpenSuperWhisper.app" ];
+      RunAtLoad = true;
+    };
+  };
 
   # Marketplace downloads run explicitly via make vscode after the app exists.
 }

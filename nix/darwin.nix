@@ -159,6 +159,8 @@
       show-recents = false;
     };
     CustomUserPreferences = {
+      "fr.my-monkey.opensuperwhisper" =
+        builtins.fromJSON (builtins.readFile ../mac/opensuperwhisper.json);
       NSGlobalDomain.WebKitDeveloperExtras = true;
       "com.apple.finder".WarnOnEmptyTrash = false;
       "com.apple.driver.AppleBluetoothMultitouch.trackpad".TrackpadCornerSecondaryClick = 2;
@@ -180,7 +182,10 @@
   # Mac can install them. Profile-specific entries live in nix/profiles.
   homebrew = {
     enable = true;
-    taps = [ { name = "nikitabobko/tap"; trusted = true; } ];
+    taps = [
+      { name = "nikitabobko/tap"; trusted = true; }
+      { name = "my-monkeys/tap"; trusted = true; }
+    ];
     casks = [
       "nikitabobko/tap/aerospace"
       "arc"
@@ -194,12 +199,13 @@
       "font-jetbrains-mono-nerd-font"
       "google-chrome"
       "kap"
-      "opensuperwhisper"
+      "my-monkeys/tap/opensuperwhisper"
       "postman"
       "shortcat"
       "spotify"
       "visual-studio-code"
-      "wezterm"
+      # Nightly includes the macOS Dictation fix missing from the 2024 stable build.
+      "wezterm@nightly"
       "zoom"
     ];
     onActivation = {

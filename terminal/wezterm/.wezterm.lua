@@ -1,5 +1,27 @@
 local wezterm = require 'wezterm'
 local config = wezterm.config_builder and wezterm.config_builder() or {}
+local act = wezterm.action
+
+config.leader = { key = 'a', mods = 'CTRL', timeout_milliseconds = 3000 }
+config.keys = {
+  { key = 'v', mods = 'LEADER', action = act.SplitHorizontal { domain = 'CurrentPaneDomain' } },
+  { key = 's', mods = 'LEADER', action = act.SplitVertical { domain = 'CurrentPaneDomain' } },
+  { key = 'h', mods = 'LEADER', action = act.ActivatePaneDirection 'Left' },
+  { key = 'j', mods = 'LEADER', action = act.ActivatePaneDirection 'Down' },
+  { key = 'k', mods = 'LEADER', action = act.ActivatePaneDirection 'Up' },
+  { key = 'l', mods = 'LEADER', action = act.ActivatePaneDirection 'Right' },
+  -- Press Ctrl+a twice to send Ctrl+a to the shell.
+  { key = 'a', mods = 'LEADER|CTRL', action = act.SendKey { key = 'a', mods = 'CTRL' } },
+}
+
+-- Accept the next key even when Ctrl is still held after the leader.
+for _, binding in ipairs { table.unpack(config.keys, 1, 6) } do
+  table.insert(config.keys, {
+    key = binding.key,
+    mods = 'LEADER|CTRL',
+    action = binding.action,
+  })
+end
 
 local color_scheme_dirs = {
   wezterm.config_dir .. '/themes',

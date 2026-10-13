@@ -138,30 +138,61 @@ existing terminal configuration into your home directory. GUI applications are
 declarative.
 
 WezTerm is the terminal on every platform, from one configuration in
-`terminal/wezterm`. On macOS it is a Homebrew cask, and Home Manager links the
+`terminal/wezterm`. On macOS it uses the official `wezterm@nightly` Homebrew cask for macOS
+Dictation support, and Home Manager links the
 config and its themes into `~/.config/wezterm`, so edits apply on the next
 reload without a rebuild. It uses the Pnevma palette, bold 16-point JetBrains
 Mono, 90% background opacity that dims when the window loses focus, and zero
 padding. AeroSpace opens a new WezTerm window with Alt-Enter.
 
+AeroSpace uses only `~/.config/aerospace/aerospace.toml`, linked from
+`mac/.aerospace.toml`. During activation, Home Manager moves any legacy
+`~/.aerospace.toml` into `~/.local/state/dotfiles/backups/aerospace.*/`
+before creating links, preserving its contents and preventing ambiguous config
+errors. After editing the config, run `aerospace reload-config`.
+
 ### External Windows keyboard on macOS
 
-Home Manager declares the modifier swap in `nix/home.nix` for the Wireless
-Gaming Keyboard (USB vendor `0x320f`, product `0x5088`). Both left and right
-Alt keys act as Command; Windows keys act as Option. This matches the Mac
-keyboard's physical modifier positions. The built-in keyboard is unchanged.
+Home Manager keeps the default modifier roles in `nix/home.nix` for the
+Wireless Gaming Keyboard (USB vendor `0x320f`, product `0x5088`). Physical
+**Alt is Option**, so **Alt+Enter**, **Alt+H/J/K/L**, and the other AeroSpace
+shortcuts use the labeled Alt key. **Windows is Command**. Both sides retain
+these roles; the built-in keyboard is unchanged.
 
-Use **Alt+C / Alt+V** on the external keyboard and **Command+C / Command+V**
-on the Mac keyboard to copy/paste, including in WezTerm. **Ctrl+C** still
-interrupts terminal commands. Shortcuts described as Option (including the
-AeroSpace launcher above) use the Windows key on this external keyboard.
+Use **Windows+C / Windows+V** on the external keyboard and
+**Command+C / Command+V** on the Mac keyboard to copy/paste, including in
+WezTerm. **Ctrl+C** still interrupts terminal commands.
 
-Run `make` to restore the mapping on either Nix profile. The activation writes
-the user's host-specific macOS modifier preference; log out and back in if
-macOS has not picked it up. To use another keyboard model, obtain its vendor
-and product IDs with `hidutil list` and update the decimal IDs in the preference
-key. To undo the swap, remove the activation block and restore this keyboard's
-defaults in System Settings → Keyboard → Keyboard Shortcuts → Modifier Keys.
+Run `make` on either Nix profile to clear the earlier Alt/Windows swap. The
+activation clears this device's host-specific modifier mapping; log out and
+back in if macOS has not picked it up. Other keyboard models retain their
+existing settings.
+
+### Voice-to-text prompts on macOS
+
+Nix installs the maintained `my-monkeys/tap/opensuperwhisper` app and applies
+`mac/opensuperwhisper.json` as its preferences. The unqualified Homebrew cask
+is the older original app and does not provide this setup.
+
+Hold **Left Ctrl** on either keyboard, speak, then release to insert text into
+the focused Codex or Claude Code prompt. The MX Master 3 thumb-rest button uses
+**tap once to start, tap again to stop**: Logi Options+ sends a brief shortcut
+rather than preserving the physical hold/release.
+Review and press Enter to submit. Parakeet Ultra runs locally with live preview;
+LLM cleanup, automatic submission, and transcription history are disabled. The
+previous clipboard is restored after pasting.
+
+In Logi Options+, select MX Master 3 → All applications → Thumb button →
+Keyboard shortcut and assign **Control+Shift+Space**, replacing Gestures. The
+same combination is declared as the second OpenSuperWhisper trigger alongside
+Left Ctrl. Logi Options+ owns the hardware mapping; recreate this step on a new
+Mac. Its private runtime database is not stored in Git. The thumb button replaces its gesture actions with dictation; other mouse
+buttons retain their existing actions.
+
+On first launch, download Parakeet Ultra in the app and grant Microphone and
+Accessibility access in System Settings. These permissions and model downloads
+are machine-local and are not stored in Git. macOS native Dictation is separate
+and is not required. This configuration does not affect Windows/WSL.
 
 ### Rebuilding and validation
 

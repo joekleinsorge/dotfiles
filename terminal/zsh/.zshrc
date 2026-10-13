@@ -64,6 +64,8 @@ elif command -v wezterm >/dev/null 2>&1; then
   alias s='wezterm ssh'
 fi
 alias t='tmux'
+alias co='codex --dangerously-bypass-approvals-and-sandbox'
+alias cc='claude --dangerously-skip-permissions'
 alias tl='tmux list-sessions'
 alias treload='tmux source-file ~/.tmux.conf \; display-message "tmux config reloaded"'
 alias tkill='tmux kill-session -t'
