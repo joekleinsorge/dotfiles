@@ -1,6 +1,25 @@
 { config, lib, pkgs, dotfilesPath, ... }:
 
 let
+  keyboardMappings = pkgs.writeShellScript "keyboard-mappings" ''
+    set -euo pipefail
+
+    # Caps Lock becomes the otherwise unused F18 on both keyboards (voice only).
+    /usr/bin/hidutil property --set '{"UserKeyMapping":[
+      {"HIDKeyboardModifierMappingSrc":30064771129,"HIDKeyboardModifierMappingDst":30064771181}
+    ]}' >/dev/null
+
+    # Windows keyboard: the key beside Space is Command, the next key is Option.
+    # Include Caps Lock because a device-specific map replaces the global map.
+    /usr/bin/hidutil property --matching '{"VendorID":12815,"ProductID":20616}' --set '{"UserKeyMapping":[
+      {"HIDKeyboardModifierMappingSrc":30064771129,"HIDKeyboardModifierMappingDst":30064771181},
+      {"HIDKeyboardModifierMappingSrc":30064771298,"HIDKeyboardModifierMappingDst":30064771299},
+      {"HIDKeyboardModifierMappingSrc":30064771299,"HIDKeyboardModifierMappingDst":30064771298},
+      {"HIDKeyboardModifierMappingSrc":30064771302,"HIDKeyboardModifierMappingDst":30064771303},
+      {"HIDKeyboardModifierMappingSrc":30064771303,"HIDKeyboardModifierMappingDst":30064771302}
+    ]}' >/dev/null
+  '';
+
   liveLink = relativePath:
     config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/${relativePath}";
 
@@ -76,12 +95,23 @@ in {
     fi
   '';
 
-  # Keep physical Alt as Option for AeroSpace, and Windows as Command.
-  # Clear the previous swap only for Wireless Gaming Keyboard (USB 320f:5088).
+  # Remove legacy macOS remaps; hidutil below owns the physical layout.
   home.activation.externalKeyboardModifiers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run /usr/bin/defaults -currentHost write NSGlobalDomain \
       com.apple.keyboard.modifiermapping.12815-20616-0 -array
+    run /usr/bin/defaults -currentHost write NSGlobalDomain \
+      com.apple.keyboard.modifiermapping.0-0-0 -array
+    run "${keyboardMappings}"
   '';
+
+  # Apply at login without resetting keys during a held voice recording.
+  launchd.agents.keyboard-mappings = {
+    enable = true;
+    config = {
+      ProgramArguments = [ "${keyboardMappings}" ];
+      RunAtLoad = true;
+    };
+  };
 
   # Keep the global hold-to-talk shortcut available after login.
   launchd.agents.opensuperwhisper = {

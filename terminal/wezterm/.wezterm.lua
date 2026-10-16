@@ -2,25 +2,22 @@ local wezterm = require 'wezterm'
 local config = wezterm.config_builder and wezterm.config_builder() or {}
 local act = wezterm.action
 
-config.leader = { key = 'a', mods = 'CTRL', timeout_milliseconds = 3000 }
 config.keys = {
-  { key = 'v', mods = 'LEADER', action = act.SplitHorizontal { domain = 'CurrentPaneDomain' } },
-  { key = 's', mods = 'LEADER', action = act.SplitVertical { domain = 'CurrentPaneDomain' } },
-  { key = 'h', mods = 'LEADER', action = act.ActivatePaneDirection 'Left' },
-  { key = 'j', mods = 'LEADER', action = act.ActivatePaneDirection 'Down' },
-  { key = 'k', mods = 'LEADER', action = act.ActivatePaneDirection 'Up' },
-  { key = 'l', mods = 'LEADER', action = act.ActivatePaneDirection 'Right' },
-  -- Press Ctrl+a twice to send Ctrl+a to the shell.
-  { key = 'a', mods = 'LEADER|CTRL', action = act.SendKey { key = 'a', mods = 'CTRL' } },
+  { key = 'd', mods = 'CMD', action = act.SplitHorizontal { domain = 'CurrentPaneDomain' } },
+  { key = 'd', mods = 'CMD|SHIFT', action = act.SplitVertical { domain = 'CurrentPaneDomain' } },
+  { key = 'h', mods = 'CMD|SHIFT', action = act.ActivatePaneDirection 'Left' },
+  { key = 'j', mods = 'CMD|SHIFT', action = act.ActivatePaneDirection 'Down' },
+  { key = 'k', mods = 'CMD|SHIFT', action = act.ActivatePaneDirection 'Up' },
+  { key = 'l', mods = 'CMD|SHIFT', action = act.ActivatePaneDirection 'Right' },
 }
 
--- Accept the next key even when Ctrl is still held after the leader.
-for _, binding in ipairs { table.unpack(config.keys, 1, 6) } do
-  table.insert(config.keys, {
-    key = binding.key,
-    mods = 'LEADER|CTRL',
-    action = binding.action,
-  })
+-- On macOS, accept either external-keyboard modifier for clipboard shortcuts.
+-- The device's Alt/Windows swap then cannot split copy and paste across keys.
+if wezterm.target_triple:find('darwin') then
+  for _, mods in ipairs { 'CMD', 'ALT' } do
+    table.insert(config.keys, { key = 'c', mods = mods, action = act.CopyTo 'Clipboard' })
+    table.insert(config.keys, { key = 'v', mods = mods, action = act.PasteFrom 'Clipboard' })
+  end
 end
 
 local color_scheme_dirs = {

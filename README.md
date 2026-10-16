@@ -153,20 +153,31 @@ errors. After editing the config, run `aerospace reload-config`.
 
 ### External Windows keyboard on macOS
 
-Home Manager keeps the default modifier roles in `nix/home.nix` for the
-Wireless Gaming Keyboard (USB vendor `0x320f`, product `0x5088`). Physical
-**Alt is Option**, so **Alt+Enter**, **Alt+H/J/K/L**, and the other AeroSpace
-shortcuts use the labeled Alt key. **Windows is Command**. Both sides retain
-these roles; the built-in keyboard is unchanged.
+The Wireless Gaming Keyboard (USB `320f:5088`) matches the Mac keyboard by
+physical position: external **Alt = Command** (beside Space), external
+**Windows = Option** (one key farther out). Both sides are mapped.
 
-Use **Windows+C / Windows+V** on the external keyboard and
-**Command+C / Command+V** on the Mac keyboard to copy/paste, including in
-WezTerm. **Ctrl+C** still interrupts terminal commands.
+This device mapping is shared by the `personal` and `work` Nix profiles and
+applies across macOS apps, including Firefox. On the work laptop, apply the
+checkout containing these changes with `DOTFILES_PROFILE=work make`. The built-in
+keyboard keeps its normal Command/Option layout. A different external keyboard
+model needs its vendor/product IDs added to `nix/home.nix`; the modifier swap
+currently targets only USB `320f:5088`.
 
-Run `make` on either Nix profile to clear the earlier Alt/Windows swap. The
-activation clears this device's host-specific modifier mapping; log out and
-back in if macOS has not picked it up. Other keyboard models retain their
-existing settings.
+Copy/paste uses **Alt+C/V** externally and **Command+C/V** on the laptop,
+including in WezTerm. AeroSpace uses **Windows+H/J/K/L** externally and
+**Option+H/J/K/L** on the laptop; its config calls this modifier `alt`.
+Control retains its normal terminal behavior, including Ctrl+C to interrupt.
+
+WezTerm splits side by side with **Alt+D** externally / **Command+D** on the
+laptop. Add **Shift** for a top/bottom split. Focus panes with
+**Alt+Shift+H/J/K/L** externally / **Command+Shift+H/J/K/L** on the laptop.
+These are direct shortcuts with no leader sequence.
+
+Caps Lock is remapped to F18 on both keyboards and reserved for voice, so it
+no longer toggles capitals. `nix/home.nix` embeds the mapping script in the Nix store;
+Home Manager runs it at activation and login. If USB reconnection clears the
+mapping, log in again or rerun the keyboard-mappings launch agent. Other keyboard models only receive the Caps remap.
 
 ### Voice-to-text prompts on macOS
 
@@ -174,7 +185,7 @@ Nix installs the maintained `my-monkeys/tap/opensuperwhisper` app and applies
 `mac/opensuperwhisper.json` as its preferences. The unqualified Homebrew cask
 is the older original app and does not provide this setup.
 
-Hold **Left Ctrl** on either keyboard, speak, then release to insert text into
+Hold **Caps Lock** on either keyboard, speak, then release to insert text into
 the focused Codex or Claude Code prompt. The MX Master 3 thumb-rest button uses
 **tap once to start, tap again to stop**: Logi Options+ sends a brief shortcut
 rather than preserving the physical hold/release.
@@ -185,7 +196,7 @@ previous clipboard is restored after pasting.
 In Logi Options+, select MX Master 3 → All applications → Thumb button →
 Keyboard shortcut and assign **Control+Shift+Space**, replacing Gestures. The
 same combination is declared as the second OpenSuperWhisper trigger alongside
-Left Ctrl. Logi Options+ owns the hardware mapping; recreate this step on a new
+Caps Lock (F18). Logi Options+ owns the hardware mapping; recreate this step on a new
 Mac. Its private runtime database is not stored in Git. The thumb button replaces its gesture actions with dictation; other mouse
 buttons retain their existing actions.
 
