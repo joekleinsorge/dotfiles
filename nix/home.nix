@@ -72,11 +72,6 @@ in {
     ".pi/agent/AGENTS.md".source = agentGuidance;
   } // skillLinks ".agents/skills" // skillLinks ".claude/skills";
 
-  home.sessionVariables = {
-    EDITOR = "nvim";
-    KUBE_EDITOR = "nvim";
-  };
-
   programs.home-manager.enable = true;
 
   # AeroSpace rejects startup if both supported config paths exist. Preserve

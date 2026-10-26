@@ -23,7 +23,7 @@ fi
 [ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
 [ -d "$HOME/.local/share/nvim/mason/bin" ] && export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
 [ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/openjdk/bin" ] && export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
-export PATH="$HOME/.emacs.d/bin:$PATH"
+[ -d "$HOME/.emacs.d/bin" ] && export PATH="$HOME/.emacs.d/bin:$PATH"
 export EDITOR="nvim"
 export KUBE_EDITOR="nvim"
 
@@ -76,7 +76,6 @@ alias gc="git commit -m"
 alias gp="git push"
 alias gpl="git pull"
 alias gac="ga && gc"
-alias gap="ga && gc 'ci: commit' && gp"
 alias gapf="git commit --amend --no-edit && gp --force-with-lease"
 alias gcc='echo -e "\e[1;32mfix:\e[0m a commit that fixes a bug."; echo -e "\e[1;36mfeat:\e[0m a commit that adds new functionality."; echo -e "\e[1;33mdocs:\e[0m a commit that adds or improves documentation."; echo -e "\e[1;35mtest:\e[0m a commit that adds unit tests."; echo -e "\e[1;31mperf:\e[0m a commit that improves performance, without functional changes."; echo -e "\e[1;34mchore:\e[0m a catch-all type for any other commits."'
 alias gl="git log --graph --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)' --all"
@@ -97,12 +96,23 @@ alias path='echo $PATH | tr -s ":" "\n"'
 alias notes="nvim ~/git/notes/vault"
 alias ...="cd ../.."
 alias dot="cd ~/git/dotfiles"
-alias skill="ps -ef | fzf | awk '{print $2}' | xargs kill -9"
 alias ytdlmp4="yt-dlp -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]' --merge-output-format mp4"
 alias ytdlmp3="yt-dlp -x --audio-format mp3 --audio-quality 0"
-if $is_macos; then
+if $is_macos && command -v limactl >/dev/null 2>&1; then
   alias mentat="limactl start --mount-only .:w & lima"
 fi
+
+skill() {
+  emulate -L zsh
+  local pid
+  pid=$(ps -ef | fzf --header-lines=1 --header='Select a process to kill' | awk '{print $2}') || return
+  [[ "$pid" = <-> ]] && kill -9 "$pid"
+}
+
+gap() {
+  [[ -n "$1" ]] || { print -u2 'Usage: gap "type: message"'; return 1; }
+  git add . && git commit -m "$1" && git push
+}
 
 tx() {
   tmux new-session -A -s "${1:-main}"
@@ -190,11 +200,12 @@ glt() {
 }
 
 cherry() {
+  local commit
   commit=$(git log --pretty=format:"%h %s" --branches='*' -n 100 \
     | fzf --height "90%" --header "PLEASE CHOOSE A COMMIT TO CHERRY-PICK" --reverse --border --ansi --preview "git show --color=always {1}" \
     | awk '{print $1}')
   if [ -n "$commit" ]; then
-    git cherry-pick $commit
+    git cherry-pick "$commit"
   fi
 }
 
@@ -245,7 +256,7 @@ gwi() {
 }
 
 k_sh() {
-  local namespace pod
+  local namespace pod namespace_pod
   namespace_pod=$(kubectl get pods --all-namespaces --no-headers | fzf +m --header="Select a Pod:" | awk '{print $1, $2}')
   if [ -n "$namespace_pod" ]; then
     read -r namespace pod <<< "$namespace_pod"
@@ -285,5 +296,17 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
 fi
 
 
-# Added by Antigravity CLI installer
-export PATH="$HOME/.local/bin:$PATH"
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+# Nix links these into the system profile on macOS; Homebrew provides them in
+# WSL. They load at top level because plugins declare globals with typeset, and
+# syntax highlighting goes last so it wraps every widget defined above.
+for _plugin in zsh-autosuggestions zsh-syntax-highlighting; do
+  for _dir in /run/current-system/sw/share ${HOMEBREW_PREFIX:+$HOMEBREW_PREFIX/share}; do
+    if [ -f "$_dir/$_plugin/$_plugin.zsh" ]; then
+      source "$_dir/$_plugin/$_plugin.zsh"
+      break
+    fi
+  done
+done
+unset _plugin _dir
