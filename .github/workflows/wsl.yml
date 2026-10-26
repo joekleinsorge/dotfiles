@@ -1,0 +1,40 @@
+name: wsl
+
+# Runs the WSL setup on Ubuntu, the distribution WSL installs by default. It
+# installs every Homebrew package, so it runs only when the files it reads
+# change, and weekly to catch formulae that Homebrew renames or removes.
+on:
+  push:
+    branches: [main]
+    paths:
+      - wsl/**
+      - terminal/**
+      - agents/**
+      - .github/workflows/wsl.yml
+  pull_request:
+    paths:
+      - wsl/**
+      - terminal/**
+      - agents/**
+      - .github/workflows/wsl.yml
+  schedule:
+    - cron: "0 9 * * 1" # Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      # No terminal, so chsh cannot prompt; the script tolerates that.
+      - name: Run the WSL setup
+        run: bash wsl/setup.sh "$GITHUB_WORKSPACE" </dev/null
+      - name: Check the linked configuration loads
+        run: |
+          test "$(readlink ~/.zshrc)" = "$GITHUB_WORKSPACE/terminal/zsh/.zshrc"
+          test "$(readlink ~/.config/nvim)" = "$GITHUB_WORKSPACE/terminal/nvim"
+          zsh -i -c 'for tool in starship nvim fzf zoxide eza; do command -v "$tool" || exit 1; done'

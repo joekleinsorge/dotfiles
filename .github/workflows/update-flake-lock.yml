@@ -18,13 +18,18 @@ jobs:
       - uses: cachix/install-nix-action@v31
       # Opens or refreshes one pull request. Merge it after the check passes,
       # then run `make` on each Mac to apply the updates.
+      #
+      # Pull requests opened with the default token do not trigger check.yml.
+      # Add a FLAKE_LOCK_TOKEN secret (a fine-grained token with contents and
+      # pull-request write access to this repository) so the PR shows checks.
       - uses: DeterminateSystems/update-flake-lock@v29
         with:
+          token: ${{ secrets.FLAKE_LOCK_TOKEN || github.token }}
           pr-title: "chore: update flake.lock"
           commit-msg: "chore: update flake.lock"
-      # Pull requests opened with the default token do not trigger check.yml,
-      # so verify the updated lock here. A failure marks this run red.
+      # Also verify the updated lock here, so a failure marks this run red even
+      # without the secret.
       - name: Check the updated flake
         run: |
-          nix shell --inputs-from . nixpkgs#ripgrep nixpkgs#shellcheck \
-            --command make nix-check
+          nix shell --inputs-from . nixpkgs#ripgrep nixpkgs#shellcheck nixpkgs#stylua nixpkgs#lua \
+            --command make runtime-check nix-check shell-check lua-check wezterm-check

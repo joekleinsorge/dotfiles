@@ -1,6 +1,6 @@
 .POSIX:
 
-.PHONY: default bootstrap mac rebuild diff update preferences github agents doctor check runtime-check nix-check shell-check nvim-check wezterm-check windows wsl vscode
+.PHONY: default bootstrap mac rebuild diff update preferences github agents doctor check runtime-check nix-check shell-check lua-check nvim-check wezterm-check windows wsl vscode
 
 
 default:
@@ -35,15 +35,19 @@ doctor:
 	bash ./setup/doctor.sh
 
 preferences:
-	sh ./mac/set_defaults.sh
+	bash ./mac/set_defaults.sh
 
 github:
-	sh ./github/download_repos.sh
+	bash ./github/download_repos.sh
 
-nvim-check:
+# Static checks that need no installed plugins, so CI can run them too.
+lua-check:
 	@command -v stylua >/dev/null 2>&1 || { echo "stylua is required"; exit 1; }
 	stylua --check terminal/nvim
 	@for file in $$(rg --files terminal/nvim -g '*.lua'); do luac -p "$$file" || exit 1; done
+
+# The smoke test loads the plugins already installed on this machine.
+nvim-check: lua-check
 	@tmp="$$(mktemp -d "$${TMPDIR:-/tmp}/dotfiles-nvim-check.XXXXXX")"; \
 		trap 'rm -rf "$$tmp"' 0 1 2 3 15; \
 		real_data="$${XDG_DATA_HOME:-$$HOME/.local/share}/nvim"; \

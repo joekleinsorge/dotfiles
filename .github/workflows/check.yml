@@ -17,8 +17,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       # Tools come from the locked nixpkgs so CI matches the configured Macs.
-      - name: Check flake, profiles, scripts, and Neovim formatting
+      # The Neovim smoke test needs installed plugins, so CI runs only lua-check.
+      - name: Check flake, profiles, scripts, and Lua
         run: |
-          nix shell --inputs-from . nixpkgs#ripgrep nixpkgs#shellcheck nixpkgs#stylua \
-            --command make runtime-check nix-check shell-check
-          nix shell --inputs-from . nixpkgs#stylua --command stylua --check terminal/nvim
+          nix shell --inputs-from . nixpkgs#ripgrep nixpkgs#shellcheck nixpkgs#stylua nixpkgs#lua \
+            --command make runtime-check nix-check shell-check lua-check wezterm-check
