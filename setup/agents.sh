@@ -18,10 +18,23 @@ entries() {
   grep -vE '^[[:space:]]*(#|$)' "$1"
 }
 
+# The installer has no version option, so pin the script itself. When pi.dev
+# changes it, review the new script and update this hash.
+pi_installer_sha256=ff4ed7b1ea1c058f33249a44093863b50cf95224ab4ff654e722fcbbbdaa31df
+
 pi_bin="$(command -v pi 2>/dev/null || echo "$HOME/.local/bin/pi")"
 if [ ! -x "$pi_bin" ]; then
   echo "Installing pi with its official installer; it updates itself with 'pi update'."
-  curl -fsSL https://pi.dev/install.sh | sh
+  installer="$(mktemp)"
+  trap 'rm -f "$installer"' EXIT
+  curl --proto '=https' --tlsv1.2 -fsSL https://pi.dev/install.sh -o "$installer"
+  actual="$(shasum -a 256 "$installer" | awk '{print $1}')"
+  if [ "$actual" = "$pi_installer_sha256" ]; then
+    sh "$installer"
+  else
+    echo "The pi installer changed (sha256 $actual). Review https://pi.dev/install.sh," >&2
+    echo "then update pi_installer_sha256 in setup/agents.sh." >&2
+  fi
 fi
 if [ -x "$pi_bin" ]; then
   installed="$("$pi_bin" list 2>/dev/null | awk '{print $1}')"
