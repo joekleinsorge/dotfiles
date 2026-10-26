@@ -8,9 +8,16 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+
+    # Third-party Homebrew taps, pinned by flake.lock and updated with it.
+    # Casks from homebrew/cask come from Homebrew's API and are not pinned.
+    tap-nikitabobko = { url = "github:nikitabobko/homebrew-tap"; flake = false; };
+    tap-my-monkeys = { url = "github:my-monkeys/homebrew-tap"; flake = false; };
+    tap-konstructio = { url = "github:konstructio/homebrew-taps"; flake = false; };
+    tap-emacsmacport = { url = "github:railwaycat/homebrew-emacsmacport"; flake = false; };
   };
 
-  outputs = { darwin, home-manager, nix-homebrew, ... }:
+  outputs = inputs@{ darwin, home-manager, nix-homebrew, ... }:
     let
       # The setup scripts detect the machine and pass it through the
       # environment with --impure, so no Mac needs its own edit here. Pure
@@ -29,7 +36,7 @@
 
       mkDarwin = profile: darwin.lib.darwinSystem {
         inherit system;
-        specialArgs = { inherit username system profile; };
+        specialArgs = { inherit inputs username system profile; };
         modules = [
           ./nix/darwin.nix
           ./nix/profiles/${profile}.nix

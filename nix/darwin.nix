@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, system, ... }:
+{ config, pkgs, lib, inputs, username, system, ... }:
 
 {
   imports = [ ./modules/homebrew-cleanup.nix ];
@@ -38,7 +38,6 @@
 
     # Editors, notes, and docs
     glow
-    hugo
     markdownlint-cli
     neovim
     proselint
@@ -47,18 +46,14 @@
 
     # Languages and build tools
     cargo
-    dotnet-sdk_8
     go
     golangci-lint
     lua
     luaPackages.luacheck
     luarocks
-    maven
     nodejs
     pipx
-    powershell
     python3
-    ruby
     ruff
     rustc
     shellcheck
@@ -69,14 +64,11 @@
     gh
     git
     pre-commit
-    vhs
 
     # Containers, Kubernetes, and infrastructure
     ansible
     argocd
-    argocd-autopilot
     azure-cli
-    butane
     dive
     docker-client
     docker-compose
@@ -86,24 +78,16 @@
     kubectl
     kubectx
     kubernetes-helm
-    kubeseal
-    lima
-    minikube
-    podman
-    qemu
     terraform
 
     # Security and secrets
     age
     mkcert
     sops
-
-    # Media and data
-    ffmpeg
-    imagemagick
-    rclone
-    tesseract
   ];
+
+  # .zshrc sources these plugins from the system profile.
+  environment.pathsToLink = [ "/share/zsh-autosuggestions" "/share/zsh-syntax-highlighting" ];
 
   programs.zsh = {
     enable = true;
@@ -175,6 +159,12 @@
     enable = true;
     user = username;
     autoMigrate = true;
+    # Each activation syncs these taps from flake.lock. Taps stay mutable, so
+    # other taps (such as ones a company installs) are left alone.
+    taps = {
+      "nikitabobko/homebrew-tap" = inputs.tap-nikitabobko;
+      "my-monkeys/homebrew-tap" = inputs.tap-my-monkeys;
+    };
   };
 
   # GUI applications and formulas without a stable nixpkgs equivalent remain

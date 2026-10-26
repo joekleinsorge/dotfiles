@@ -1,6 +1,6 @@
 # Home Mac only. Nothing here reaches the work laptop. Shared configuration
 # lives in nix/darwin.nix.
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
 {
   environment.systemPackages = with pkgs; [
@@ -10,7 +10,37 @@
     openscad
     wireguard-tools
     yt-dlp
+
+    # Local VMs and clusters
+    butane
+    lima
+    minikube
+    podman
+    qemu
+
+    # GitOps extras
+    argocd-autopilot
+    kubeseal
+
+    # Site and media tools
+    ffmpeg
+    hugo
+    imagemagick
+    rclone
+    tesseract
+    vhs
+
+    # Other languages
+    dotnet-sdk_8
+    maven
+    powershell
+    ruby
   ];
+
+  nix-homebrew.taps = {
+    "konstructio/homebrew-taps" = inputs.tap-konstructio;
+    "railwaycat/homebrew-emacsmacport" = inputs.tap-emacsmacport;
+  };
 
   homebrew = {
     taps = [

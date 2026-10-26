@@ -96,7 +96,75 @@
         "darwin": "darwin",
         "home-manager": "home-manager",
         "nix-homebrew": "nix-homebrew",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "tap-emacsmacport": "tap-emacsmacport",
+        "tap-konstructio": "tap-konstructio",
+        "tap-my-monkeys": "tap-my-monkeys",
+        "tap-nikitabobko": "tap-nikitabobko"
+      }
+    },
+    "tap-emacsmacport": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792794412,
+        "narHash": "sha256-TPHR6ivDhPGKwA54iwxHMfD90pzypKnSrsrlfelpY4Y=",
+        "owner": "railwaycat",
+        "repo": "homebrew-emacsmacport",
+        "rev": "410d5d436407bc411e08b884e9fce9b241d21026",
+        "type": "github"
+      },
+      "original": {
+        "owner": "railwaycat",
+        "repo": "homebrew-emacsmacport",
+        "type": "github"
+      }
+    },
+    "tap-konstructio": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1769836329,
+        "narHash": "sha256-UbCsEmScwuctE4yU8Yjmttuv3AH+lIx96Z6D211QMP4=",
+        "owner": "konstructio",
+        "repo": "homebrew-taps",
+        "rev": "3f720ab7c1a75447dec8a962bd565f93ceade7b7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "konstructio",
+        "repo": "homebrew-taps",
+        "type": "github"
+      }
+    },
+    "tap-my-monkeys": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792676501,
+        "narHash": "sha256-IyjHw4n5a5reFIcdtmIOwUYTd16sz/bLyK2ZvyJOXVw=",
+        "owner": "my-monkeys",
+        "repo": "homebrew-tap",
+        "rev": "5de59047de3c7414e24bedca62af865fd85dc350",
+        "type": "github"
+      },
+      "original": {
+        "owner": "my-monkeys",
+        "repo": "homebrew-tap",
+        "type": "github"
+      }
+    },
+    "tap-nikitabobko": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791286232,
+        "narHash": "sha256-Zsi4MqzCSUlx7Nfx7hkqafC4iyPAHZRDzL0xobOBNo8=",
+        "owner": "nikitabobko",
+        "repo": "homebrew-tap",
+        "rev": "086fa55e376037f28bd959a274f588c65296c1f1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nikitabobko",
+        "repo": "homebrew-tap",
+        "type": "github"
       }
     }
   },
