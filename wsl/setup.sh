@@ -91,7 +91,7 @@ ensure_linuxbrew() {
 install_wsl_brew_packages() {
     ensure_linuxbrew
     echo "Installing Homebrew packages in WSL..."
-    brew bundle --file="$repo_root/wsl/Brewfile" --no-lock
+    brew bundle --file="$repo_root/wsl/Brewfile"
 }
 
 install_command_shims() {
